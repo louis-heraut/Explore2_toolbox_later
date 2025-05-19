@@ -46,13 +46,14 @@
 #  \___|\___/|_|_|_|| .__/ \_,_| \__|\___||_|  
 ## 1. INFO ________ |_| ______________________________________________
 # Work path
-computer_work_path = '/home/lheraut/Documents/INRAE/projects/Explore2_project/Explore2_later'
+computer_work_path = '/home/lheraut/Documents/INRAE/projects/Explore2_project/Explore2_toolbox_later'
 
 # Library path for package dev
 dev_lib_path = '/home/lheraut/Documents/INRAE/project/'
 
 ## 2. INPUT DIRECTORIES ______________________________________________
-archive_data_path = "/media/lheraut/Explore2"
+# archive_data_path = "/media/lheraut/Explore2"
+archive_data_path = "/home/lheraut/Bureau"
 
 ### 2.1 Hydro _____________________________________________________
 hydro_data_dirpath = file.path(archive_data_path, "")

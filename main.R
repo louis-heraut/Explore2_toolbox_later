@@ -2,7 +2,11 @@ lib_path = "./"
 
 verbose =
     TRUE
-    # FALSE
+# FALSE
+
+subverbose =
+    TRUE
+# FALSE
 
 MPI = NULL
 
@@ -94,6 +98,7 @@ source(computer_path, encoding='UTF-8')
 setwd(computer_work_path)
 
 library(dplyr)
+library(ggplot2)
 
 devtools::load_all("../../dataSHEEP_project/dataSHEEP/")
 dev_path = "../../SHEEPfold_project/SHEEPfold/__SHEEP__"
