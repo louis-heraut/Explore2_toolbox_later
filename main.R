@@ -106,6 +106,7 @@ list_path = list.files(dev_path, pattern='*.R$', full.names=TRUE, recursive=TRUE
 for (path in list_path) {
     source(path, encoding='UTF-8')
 }
+assign_colors_and_fonts()
 
 add_path = function (x) {
     x = c(x, file.path(resources_path, logo_dir, x["file"]))
@@ -201,16 +202,16 @@ if (!exists("Shapefiles")) {
 }
 
 
+Colors_GWL = c("4"="#AE1C27",
+               "2.7"="#F47216")
+
 sheet_projection_secteur(
     Stations,
     dataEX_serie,
     metaEX_serie,
     dataEX_criteria,
     metaEX_criteria,
-    Colors=Colors_of_storylines,
-    Colors_light=Colors_light_of_storylines,
-    Names=storylines,
-    historical=historical,
+    Colors_GWL=Colors_GWL,
     icon_path=icon_path,
     logo_info=logo_info,
     Shapefiles=Shapefiles,
