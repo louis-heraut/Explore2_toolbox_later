@@ -204,17 +204,22 @@ if (!exists("Shapefiles")) {
 }
 
 
-WL = list("GWL3"=c(GWL="3",
-                   RWL="4",
-                   GWLclean="3",
-                   RWLclean="4",
-                   color="#AE1C27")
-          # "GWL2"=c(GWL="2",
-                   # RWL="2.7",
-                   # GWLclean="2",
-                   # RWLclean="27",
-                   # color="#F47216")
-          )
+WL = list(
+    "GWL-30"=c(GWL=3,
+               RWL=4,
+               GWLfull="GWL-3.0",
+               RWLfull="RWL-4.0",
+               GWLclean="GWL-30",
+               RWLclean="RWL-40",
+               color="#AE1C27")
+    # "GWL-20"=c(GWL=2,
+               # RWL=2.7,
+               # GWLfull="GWL-2.0",
+               # RWLfull="RWL-2.7",
+               # GWLclean="GWL-20",
+               # RWLclean="RWL-27",
+               # color="#F47216")
+)
 
 NarraTRACC = list(
     "1"=c(name="Vert",
