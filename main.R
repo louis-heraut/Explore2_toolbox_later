@@ -47,7 +47,8 @@ storylines =
       )
 
 logo_info = list(
-    "EX2"=c(file='LogoExplore2.png', y=0.4, height=0.7, width=0.5)
+    "Explore2"=c(file='LogoExplore2.png'),
+    "TRACC"=c(file='la_france_s_adapte.png')
 )
 
 n_projections_by_code = 4
@@ -106,7 +107,8 @@ list_path = list.files(dev_path, pattern='*.R$', full.names=TRUE, recursive=TRUE
 for (path in list_path) {
     source(path, encoding='UTF-8')
 }
-assign_colors_and_fonts()
+assign_colors(refCOL="TRACC")
+
 
 add_path = function (x) {
     x = c(x, file.path(resources_path, logo_dir, x["file"]))
@@ -202,8 +204,35 @@ if (!exists("Shapefiles")) {
 }
 
 
-Colors_GWL = c("4"="#AE1C27",
-               "2.7"="#F47216")
+WL = list("GWL3"=c(GWL="3",
+                   RWL="4",
+                   GWLclean="3",
+                   RWLclean="4",
+                   color="#AE1C27")
+          # "GWL2"=c(GWL="2",
+                   # RWL="2.7",
+                   # GWLclean="2",
+                   # RWLclean="27",
+                   # color="#F47216")
+          )
+
+NarraTRACC = list(
+    "1"=c(name="Vert",
+          description="Réchauffement marqué et augmentation des précipitations",
+          Chain="XXX",
+          color="#569A71",
+          color_light="#BAD8C6"),
+    "2"=c(name="Jaune",
+          description="Changements futurs relativement peu marqués",
+          Chain="YYY",
+          color="#EECC66",
+          color_light="#F8EBC2"),
+    "3"=c(name="Orange",
+          description="Fort réchauffement et fort assèchement en été (et en annuel)",
+          Chain="ZZZ",
+          color="#E09B2F",
+          color_light="#F3D7AC")
+)
 
 sheet_projection_secteur(
     Stations,
@@ -211,7 +240,8 @@ sheet_projection_secteur(
     metaEX_serie,
     dataEX_criteria,
     metaEX_criteria,
-    Colors_GWL=Colors_GWL,
+    WL=WL,
+    NarraTRACC=NarraTRACC,
     icon_path=icon_path,
     logo_info=logo_info,
     Shapefiles=Shapefiles,
