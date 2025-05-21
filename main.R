@@ -238,3 +238,8 @@ sheet_projection_secteur(
 # PAS de Z
 # RCM : REMO2015 et REMO2009 -> REMO2009
 # RCM : SMHI-RCA4 -> RCA4
+
+
+capitalize_first <- function(s) {
+  paste0(toupper(substr(s, 1, 1)), substr(s, 2, nchar(s)))
+}
