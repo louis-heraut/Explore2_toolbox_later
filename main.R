@@ -10,42 +10,6 @@ subverbose =
 
 MPI = NULL
 
-Colors_of_HM = c(
-    "CTRIP"="#A88D72", #marron
-    "EROS"="#CECD8D", #vert clair
-    "GRSD"="#619C6C", #vert foncé
-    "J2000"="#74AEB9", #bleu clair
-    "MORDOR-SD"="#D8714E", #orange
-    "MORDOR-TS"="#AE473E", #rouge
-    "ORCHIDEE"="#EFA59D", #rose
-    "SIM2"="#475E6A", #bleu foncé
-    "SMASH"="#F6BA62", #mimosa
-
-    "AquiFR"="#AF3FA5", #violet
-    "EROS Bretagne"="#CECD8D", #vert clair
-    "MONA"="#F5D80E" #jaune
-)
-
-Colors_of_storylines =
-    c("HadGEM2-ES|historical-rcp85|ALADIN63|ADAMONT"="#569A71", #vert
-      "CNRM-CM5|historical-rcp85|ALADIN63|ADAMONT"="#EECC66", #jaune
-      "EC-EARTH|historical-rcp85|HadREM3-GA7|ADAMONT"="#E09B2F", #orange
-      "HadGEM2-ES|historical-rcp85|CCLM4-8-17|ADAMONT"="#791F5D" #violet
-      )
-Colors_light_of_storylines = # 60% lighter
-    c("HadGEM2-ES|historical-rcp85|ALADIN63|ADAMONT"="#BAD8C6", #vert
-      "CNRM-CM5|historical-rcp85|ALADIN63|ADAMONT"="#F8EBC2", #jaune
-      "EC-EARTH|historical-rcp85|HadREM3-GA7|ADAMONT"="#F3D7AC", #orange
-      "HadGEM2-ES|historical-rcp85|CCLM4-8-17|ADAMONT"="#E9A9D5" #violet
-      )
-
-storylines =
-    c("HadGEM2-ES|historical-rcp85|ALADIN63|ADAMONT"="Réchauffement marqué et augmentation des précipitations", #vert
-      "CNRM-CM5|historical-rcp85|ALADIN63|ADAMONT"="Changements futurs relativement peu marqués", #jaune
-      "EC-EARTH|historical-rcp85|HadREM3-GA7|ADAMONT"="Fort réchauffement et fort assèchement en été (et en annuel)", #orange
-      "HadGEM2-ES|historical-rcp85|CCLM4-8-17|ADAMONT"="Fort réchauffement et forts contrastes saisonniers en précipitations" #violet
-      )
-
 logo_info = list(
     "Explore2"=c(file='LogoExplore2.png'),
     "TRACC"=c(file='la_france_s_adapte.png')
@@ -222,21 +186,33 @@ WL = list(
 )
 
 NarraTRACC = list(
-    "1"=c(name="Vert",
-          description="Réchauffement marqué et augmentation des précipitations",
+    "A"=c(name="Argousier",
+          name_short="A",
+          description="Débits réduits et étiages sévères",
           Chain="XXX",
-          color="#569A71",
-          color_light="#BAD8C6"),
-    "2"=c(name="Jaune",
-          description="Changements futurs relativement peu marqués",
+          color="#E66912",
+          color_light="#f7c39e"),
+    
+    "G"=c(name="Genévrier",
+          name_short="G",
+          description="Débits en légère hausse et crues plus intenses",
           Chain="YYY",
-          color="#EECC66",
-          color_light="#F8EBC2"),
-    "3"=c(name="Orange",
-          description="Fort réchauffement et fort assèchement en été (et en annuel)",
+          color="#0f063b",
+          color_light="#765def"),
+    
+    "E"=c(name="Erable",
+          name_short="E",
+          description="Intensification des extrêmes",
           Chain="ZZZ",
-          color="#E09B2F",
-          color_light="#F3D7AC")
+          color="#870000",
+          color_light="#ff6969"),
+    
+    "C"=c(name="Cèdre",
+          name_short="C",
+          description="évolutions modérées",
+          Chain="AAA",
+          color="#016367",
+          color_light="#5ef7fd")
 )
 
 sheet_projection_secteur(
