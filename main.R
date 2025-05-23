@@ -39,8 +39,6 @@ toleranceRel =
 
 
 
-
-
 #  ___        _  _    _        _  _            _    _            
 # |_ _| _ _  (_)| |_ (_) __ _ | |(_) ___ __ _ | |_ (_) ___  _ _  
 #  | | | ' \ | ||  _|| |/ _` || || |(_-</ _` ||  _|| |/ _ \| ' \ 
@@ -64,6 +62,19 @@ setwd(computer_work_path)
 
 library(dplyr)
 library(ggplot2)
+library(latex2exp)
+
+
+# if (!exists("font")) {
+#     library(extrafont)
+#     font_import(paths=file.path(resources_path, "fonts"),
+#                 prompt=FALSE)
+#     # loadfonts()
+#     loadfonts(device="pdf")
+#     font = TRUE
+# }
+
+
 
 devtools::load_all("../../dataSHEEP_project/dataSHEEP/")
 dev_path = "../../SHEEPfold_project/SHEEPfold/__SHEEP__"
@@ -72,6 +83,22 @@ for (path in list_path) {
     source(path, encoding='UTF-8')
 }
 assign_colors(refCOL="TRACC")
+# dataSHEEP::load_fonts()
+
+# showtext::showtext_auto()
+# showtext::showtext_opts(dpi = 300)
+# sysfonts::font_add_google("Lato", "Lato")
+
+# library(showtext)
+# font_add("Lato",
+#          regular="./resources/fonts/Lato/Lato-Regular.ttf",
+#          bold="./resources/fonts/Lato/Lato-Bold.ttf")
+# font_add("Raleway",
+#          regular="./resources/fonts/Raleway/Raleway-Regular.ttf",
+#          bold="./resources/fonts/Raleway/Raleway-Bold.ttf")
+# showtext::showtext_auto()
+
+
 
 
 add_path = function (x) {
@@ -87,6 +114,12 @@ Stations_path = file.path(archive_data_path,
                           stations_selection_file)
 Stations = ASHE::read_tibble(Stations_path)
 Stations = filter(Stations, n_rcp85 >=4)
+
+
+Secteurs_path = file.path(archive_data_path,
+                          secteurs_selection_file)
+Secteurs = ASHE::read_tibble(Secteurs_path)
+
 
 Projections_path = file.path(archive_data_path,
                              projections_selection_file)
@@ -200,7 +233,7 @@ NarraTRACC = list(
           color="#0f063b",
           color_light="#765def"),
     
-    "E"=c(name="Erable",
+    "E"=c(name="Érable",
           name_short="E",
           description="Intensification des extrêmes",
           Chain="ZZZ",
@@ -217,6 +250,7 @@ NarraTRACC = list(
 
 sheet_projection_secteur(
     Stations,
+    Secteurs,
     dataEX_serie,
     metaEX_serie,
     dataEX_criteria,
@@ -239,7 +273,7 @@ sheet_projection_secteur(
 # RCM : REMO2015 et REMO2009 -> REMO2009
 # RCM : SMHI-RCA4 -> RCA4
 
+# capitalize_first <- function(s) {
+  # paste0(toupper(substr(s, 1, 1)), substr(s, 2, nchar(s)))
+# }
 
-capitalize_first <- function(s) {
-  paste0(toupper(substr(s, 1, 1)), substr(s, 2, nchar(s)))
-}

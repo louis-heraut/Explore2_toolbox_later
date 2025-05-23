@@ -54,6 +54,7 @@ dev_lib_path = '/home/lheraut/Documents/INRAE/project/'
 ## 2. INPUT DIRECTORIES ______________________________________________
 # archive_data_path = "/media/lheraut/Explore2"
 archive_data_path = "/home/lheraut/Bureau"
+secteurs_selection_file = "secteurs_selection.csv"
 
 ### 2.1 Hydro _____________________________________________________
 hydro_data_dirpath = file.path(archive_data_path, "")
