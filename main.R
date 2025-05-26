@@ -107,8 +107,14 @@ add_path = function (x) {
     return (x)
 }
 logo_info = lapply(logo_info, add_path)
-icon_path = file.path(resources_path, icon_dir)
 
+icon_dirpath = file.path(resources_path, icon_dir)
+icon_paths = list.files(icon_dirpath, recursive=TRUE, full.names=TRUE)
+icon = lapply(icon_paths, svgparser::read_svg)
+# icon = svgparser::read_svg(file.path(icon_path,
+#                                      paste0(gsub(" ", "_", type),
+#                                             ".svg")))
+# 
 
 Stations_path = file.path(archive_data_path,
                           stations_selection_file)
