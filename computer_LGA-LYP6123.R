@@ -73,8 +73,8 @@ recharge_data_dirpath = file.path(archive_data_path, "")
 ### 2.3. Resources ___________________________________________________
 resources_path = file.path(computer_work_path, 'resources')
 logo_dir = 'logo'
-icon_dir = 'icon/SVG'
-font_dir = 'fonts'
+icons_dir = 'icons/SVG'
+fonts_dir = 'fonts'
 
 ### 2.4. Shapefile ________________________________________________
 computer_shp_path =

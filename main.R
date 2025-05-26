@@ -39,6 +39,9 @@ toleranceRel =
 
 
 
+# grep("aterial", systemfonts::system_fonts()$family, value=TRUE)
+
+
 #  ___        _  _    _        _  _            _    _            
 # |_ _| _ _  (_)| |_ (_) __ _ | |(_) ___ __ _ | |_ (_) ___  _ _  
 #  | | | ' \ | ||  _|| |/ _` || || |(_-</ _` ||  _|| |/ _ \| ' \ 
@@ -108,13 +111,12 @@ add_path = function (x) {
 }
 logo_info = lapply(logo_info, add_path)
 
-icon_dirpath = file.path(resources_path, icon_dir)
-icon_paths = list.files(icon_dirpath, recursive=TRUE, full.names=TRUE)
-icon = lapply(icon_paths, svgparser::read_svg)
-# icon = svgparser::read_svg(file.path(icon_path,
-#                                      paste0(gsub(" ", "_", type),
-#                                             ".svg")))
-# 
+icons_dirpath = file.path(resources_path, icons_dir)
+icons_paths = list.files(icons_dirpath,
+                         pattern="[.]svg",
+                         recursive=TRUE, full.names=TRUE)
+icons = lapply(icons_paths, svgparser::read_svg)
+names(icons) = gsub(".svg", "", basename(icons_paths))
 
 Stations_path = file.path(archive_data_path,
                           stations_selection_file)
@@ -263,7 +265,7 @@ sheet_projection_secteur(
     metaEX_criteria,
     WL=WL,
     NarraTRACC=NarraTRACC,
-    icon_path=icon_path,
+    icons=icons,
     logo_info=logo_info,
     Shapefiles=Shapefiles,
     figdir=figdir,
