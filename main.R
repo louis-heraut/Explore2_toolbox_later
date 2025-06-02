@@ -33,9 +33,8 @@ river_length =
 # 300000
 
 # Tolerance of the simplification algorithm for shapefile in sf
-toleranceRel =
-    1000 # normal map
-    # 9000 # mini map
+toleranceRel_normal = 1000
+toleranceRel_mini = 9000
 
 
 
@@ -205,7 +204,7 @@ if (!exists("Shapefiles")) {
         river_shp_path=river_shp_path,
         river_selection=river_selection,
         river_length=river_length,
-        toleranceRel=toleranceRel)
+        toleranceRel=toleranceRel_mini)
 }
 
 
@@ -230,6 +229,7 @@ NarraTRACC = list(
     "A"=c(name="Argousier",
           name_short="A",
           description="Débits réduits et étiages sévères",
+          climateChain="HadGEM2-ES|historical-rcp85|ALADIN63|ADAMONT",
           Chain="XXX",
           color="#E66912",
           color_light="#f7c39e"),
@@ -237,6 +237,7 @@ NarraTRACC = list(
     "G"=c(name="Genévrier",
           name_short="G",
           description="Débits en légère hausse et crues plus intenses",
+          climateChain="IPSL-CM5A-MR|historical-rcp85|HIRHAM5|ADAMONT",
           Chain="YYY",
           color="#0f063b",
           color_light="#765def"),
@@ -244,6 +245,7 @@ NarraTRACC = list(
     "E"=c(name="Érable",
           name_short="E",
           description="Intensification des extrêmes",
+          climateChain="MPI-ESM-LR|historical-rcp85|CCLM4-8-17|ADAMONT",
           Chain="ZZZ",
           color="#870000",
           color_light="#ff6969"),
@@ -251,6 +253,7 @@ NarraTRACC = list(
     "C"=c(name="Cèdre",
           name_short="C",
           description="évolutions modérées",
+          climateChain="NorESM1-M|historical-rcp85|REMO|ADAMONT",
           Chain="AAA",
           color="#016367",
           color_light="#5ef7fd")
