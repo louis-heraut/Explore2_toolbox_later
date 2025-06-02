@@ -126,7 +126,7 @@ Stations = filter(Stations, n_rcp85 >=4)
 Secteurs_path = file.path(archive_data_path,
                           secteurs_selection_file)
 Secteurs = ASHE::read_tibble(Secteurs_path)
-
+Secteurs$id = 1:nrow(Secteurs)
 
 Projections_path = file.path(archive_data_path,
                              projections_selection_file)
