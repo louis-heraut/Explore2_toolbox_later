@@ -18,7 +18,9 @@ logo_info = list(
 n_projections_by_code = 4
 
 # If the hydrological network needs to be plot
-river_selection =
+river_length = 25000
+
+river_selection_mini =
     # NULL
     c("la Durance", "la Marne", "la Vienne", "le Loir", "la Loire",
       "l'Oise", "la Seine", "le Lot", "l'Adour", "le Rhône",
@@ -26,14 +28,12 @@ river_selection =
       "la Dordogne", "la Charente", "le Cher", "la Saône", "l'Allier",
       "Fleuve la Loire", "la Meuse", "la Sarthe", "la Somme",
       "l'Isère", "la Vilaine", "l'Aude", "l'Yonne")
-river_selection = paste0("^", river_selection, "$")
-river_length =
-    # NULL
-    30000
-# 300000
+river_selection_mini = paste0("^", river_selection_mini, "$")
+river_length_mini = 30000
+
 
 # Tolerance of the simplification algorithm for shapefile in sf
-toleranceRel_normal = 1000
+toleranceRel = 1000
 toleranceRel_mini = 9000
 
 
@@ -192,7 +192,7 @@ dataEX_criteria$Chain = paste(dataEX_criteria$climateChain,
 metaEX_criteria = bind_rows(metaEX_criteria_climate)
 
 # stop()
-if (!exists("Shapefiles")) {
+if (!exists("Shapefiles") | !exists("Shapefiles_mini")) {
     ASHE::post("### Loading shapefiles")
 
     Shapefiles = load_shapefile(
@@ -202,8 +202,19 @@ if (!exists("Shapefiles")) {
         regionHydro_shp_path=regionHydro_shp_path,
         secteurHydro_shp_path=secteurHydro_shp_path,
         river_shp_path=river_shp_path,
-        river_selection=river_selection,
+        river_selection=NULL,
         river_length=river_length,
+        toleranceRel=toleranceRel)
+    
+    Shapefiles_mini = load_shapefile(
+        computer_shp_path, Code=NULL,
+        france_shp_path=france_shp_path,
+        bassinHydro_shp_path=bassinHydro_shp_path,
+        regionHydro_shp_path=regionHydro_shp_path,
+        secteurHydro_shp_path=secteurHydro_shp_path,
+        river_shp_path=river_shp_path,
+        river_selection=river_selection_mini,
+        river_length=river_length_mini,
         toleranceRel=toleranceRel_mini)
 }
 
@@ -271,6 +282,7 @@ sheet_projection_secteur(
     icons=icons,
     logo_info=logo_info,
     Shapefiles=Shapefiles,
+    Shapefiles_mini=Shapefiles_mini,
     figdir=figdir,
     Pages=NULL,
     verbose=subverbose)
