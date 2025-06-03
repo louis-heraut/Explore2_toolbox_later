@@ -18,7 +18,7 @@ logo_info = list(
 n_projections_by_code = 4
 
 # If the hydrological network needs to be plot
-river_length = 25000
+river_length = 20000
 
 river_selection_mini =
     # NULL
@@ -263,7 +263,7 @@ NarraTRACC = list(
     
     "C"=c(name="Cèdre",
           name_short="C",
-          description="évolutions modérées",
+          description="Évolutions modérées",
           climateChain="NorESM1-M|historical-rcp85|REMO|ADAMONT",
           Chain="AAA",
           color="#016367",
