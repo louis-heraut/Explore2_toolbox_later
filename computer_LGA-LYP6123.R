@@ -52,9 +52,10 @@ computer_work_path = '/home/lheraut/Documents/INRAE/projects/Explore2_project/Ex
 dev_lib_path = '/home/lheraut/Documents/INRAE/project/'
 
 ## 2. INPUT DIRECTORIES ______________________________________________
-# archive_data_path = "/media/lheraut/Explore2"
-archive_data_path = "/home/lheraut/Bureau"
+archive_data_path = "/media/lheraut/Explore2"
+# archive_data_path = "/home/lheraut/Bureau"
 secteurs_selection_file = "secteurs_selection.csv"
+archive_metadata_dir = "metadata"
 
 ### 2.1 Hydro _____________________________________________________
 hydro_data_dirpath = file.path(archive_data_path, "")
@@ -65,6 +66,7 @@ variables_hydro_selection_file = "variables_selection.csv"
 ### 2.2 Climate ___________________________________________________
 climate_data_dirpath = file.path(computer_work_path, "climate_data")
 climate_data_file = "climatZH.csv"
+pivot_year_TRACC_file = "annees_pivots_TRACC.csv" 
 
 ### 2.3 Recharge ___________________________________________________
 recharge_data_dirpath = file.path(archive_data_path, "")
@@ -79,6 +81,7 @@ fonts_dir = 'fonts'
 ### 2.4. Shapefile ________________________________________________
 computer_shp_path =
     '/home/lheraut/Documents/INRAE/data/map'
+europe_shp_path = 'Europe/Europe.shp'
 # Path to the shapefile for france contour from 'computer_data_path' 
 france_shp_path = 'france/gadm36_FRA_0.shp'
 # Path to the shapefile for basin shape from 'computer_data_path' 

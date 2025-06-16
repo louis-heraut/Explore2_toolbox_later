@@ -1,5 +1,15 @@
 lib_path = "./"
 
+to_do = c(
+    "compute_delta"
+    # "plot"
+)
+
+variable_to_compute = c(
+    "QA"
+)
+
+
 verbose =
     TRUE
 # FALSE
@@ -9,6 +19,10 @@ subverbose =
 # FALSE
 
 MPI = NULL
+
+
+period_reference_TRACC = c("1991-01-01", "2020-12-31")
+
 
 logo_info = list(
     "Explore2"=c(file='LogoExplore2.png'),
@@ -63,8 +77,7 @@ source(computer_path, encoding='UTF-8')
 setwd(computer_work_path)
 
 library(dplyr)
-library(ggplot2)
-library(latex2exp)
+
 
 
 # if (!exists("font")) {
@@ -77,226 +90,257 @@ library(latex2exp)
 # }
 
 
-
-devtools::load_all("../../dataSHEEP_project/dataSHEEP/")
-dev_path = "../../SHEEPfold_project/SHEEPfold/__SHEEP__"
-list_path = list.files(dev_path, pattern='*.R$', full.names=TRUE, recursive=TRUE)
-for (path in list_path) {
-    source(path, encoding='UTF-8')
-}
-assign_colors(refCOL="TRACC")
-# dataSHEEP::load_fonts()
-
-# showtext::showtext_auto()
-# showtext::showtext_opts(dpi = 300)
-# sysfonts::font_add_google("Lato", "Lato")
-
-# library(showtext)
-# font_add("Lato",
-#          regular="./resources/fonts/Lato/Lato-Regular.ttf",
-#          bold="./resources/fonts/Lato/Lato-Bold.ttf")
-# font_add("Raleway",
-#          regular="./resources/fonts/Raleway/Raleway-Regular.ttf",
-#          bold="./resources/fonts/Raleway/Raleway-Bold.ttf")
-# showtext::showtext_auto()
+if ("compute_delta" %in% to_do) {
+    pivot_year_TRACC_path = file.path(archive_data_path,
+                                      archive_metadata_dir, 
+                                      pivot_year_TRACC_file)
+    pivot_year_TRACC = ASHE::read_tibble(pivot_year_TRACC_path)
 
 
-
-
-add_path = function (x) {
-    x = c(x, file.path(resources_path, logo_dir, x["file"]))
-    names(x)[length(x)] = "path"
-    return (x)
-}
-logo_info = lapply(logo_info, add_path)
-
-icons_dirpath = file.path(resources_path, icons_dir)
-icons_paths = list.files(icons_dirpath,
-                         pattern="[.]svg",
-                         recursive=TRUE, full.names=TRUE)
-icons = lapply(icons_paths, svgparser::read_svg)
-names(icons) = gsub(".svg", "", basename(icons_paths))
-
-Stations_path = file.path(archive_data_path,
-                          stations_selection_file)
-Stations = ASHE::read_tibble(Stations_path)
-Stations = filter(Stations, n_rcp85 >=4)
-
-
-Secteurs_path = file.path(archive_data_path,
-                          secteurs_selection_file)
-Secteurs = ASHE::read_tibble(Secteurs_path)
-Secteurs$id = 1:nrow(Secteurs)
-
-Projections_path = file.path(archive_data_path,
-                             projections_selection_file)
-Projections = ASHE::read_tibble(Projections_path)
-Projections = filter(Projections,
-                     EXP == "historical-rcp85" &
-                     grepl("ADAMONT", BC))
-
-Variables_hydro_path = file.path(archive_data_path,
-                                 variables_hydro_selection_file)
-Variables_hydro = ASHE::read_tibble(Variables_hydro_path)
-
-
-dataEX_serie = NULL
-metaEX_serie = NULL
-
-dataEX_criteria_climate =
-    ASHE::read_tibble(file.path(climate_data_dirpath, climate_data_file))
-dataEX_criteria_climate$EXP = "historical-rcp85" 
-dataEX_criteria_climate$BC = "ADAMONT"
-dataEX_criteria_climate$HM = NA
-
-dataEX_criteria_climate$variable =
-    paste0(dataEX_criteria_climate$Variable,
-           "_", gsub("seas[-]", "",
-                     dataEX_criteria_climate$Saison))
-dataEX_criteria_climate =
-    dataEX_criteria_climate %>%
-    select(-Variable, -Saison, -surface) %>%
-    rename(SH=ZH) %>%
-    rename(GWL=NivRechauf) %>%
-    relocate(variable, .after=RCM) %>%
-    relocate(EXP, .before=GCM) %>%
-    relocate(BC, .before=GCM)
-
-Ok = dataEX_criteria_climate$RCM == "SMHI-RCA4"
-dataEX_criteria_climate$RCM[Ok] = "RCA4"
-Ok = grepl("REMO", dataEX_criteria_climate$RCM)
-dataEX_criteria_climate$RCM[Ok] = "REMO"
-
-dataEX_criteria_climate = tidyr::pivot_wider(dataEX_criteria_climate,
-                                             values_from=delta,
-                                             names_from=variable,
-                                             names_prefix="delta_")
-
-metaEX_criteria_climate =
-    tibble(variable=c("RR_DJF", "RR_JJA", "TMm_DJF", "TMm_JJA"),
-           name=c("Précipitations hivernales",
-                  "Précipitations estivales",
-                  "Température moyenne hivernale",
-                  "Température moyenne estivale"))
-
-dataEX_criteria = dataEX_criteria_climate #full_join
-
-dataEX_criteria$climateChain = paste(dataEX_criteria$GCM,
-                                     dataEX_criteria$EXP,
-                                     dataEX_criteria$RCM,
-                                     dataEX_criteria$BC, sep="|")
-dataEX_criteria$Chain = paste(dataEX_criteria$climateChain,
-                              dataEX_criteria$HM, sep="|")
-
-
-metaEX_criteria = bind_rows(metaEX_criteria_climate)
-
-# stop()
-if (!exists("Shapefiles") | !exists("Shapefiles_mini")) {
-    ASHE::post("### Loading shapefiles")
-
-    Shapefiles = load_shapefile(
-        computer_shp_path, Code=NULL,
-        france_shp_path=france_shp_path,
-        bassinHydro_shp_path=bassinHydro_shp_path,
-        regionHydro_shp_path=regionHydro_shp_path,
-        secteurHydro_shp_path=secteurHydro_shp_path,
-        river_shp_path=river_shp_path,
-        river_selection=NULL,
-        river_length=river_length,
-        toleranceRel=toleranceRel)
+    data_path = file.path(
+        archive_data_path,
+        "hydrological-projections_indicateurs",
+        "hydrological-projections_yearly-variables_by-chain_fst")
     
-    Shapefiles_mini = load_shapefile(
-        computer_shp_path, Code=NULL,
-        france_shp_path=france_shp_path,
-        bassinHydro_shp_path=bassinHydro_shp_path,
-        regionHydro_shp_path=regionHydro_shp_path,
-        secteurHydro_shp_path=secteurHydro_shp_path,
-        river_shp_path=river_shp_path,
-        river_selection=river_selection_mini,
-        river_length=river_length_mini,
-        toleranceRel=toleranceRel_mini)
+    Paths = list.files(data_path, pattern=".fst",
+                       full.names=TRUE, recursive=TRUE)
+    nPaths = length(Paths)
+    
+    for (i in 1:nPaths) {
+        
+    }
 }
 
 
-WL = list(
-    "GWL-30"=c(GWL=3,
-               RWL=4,
-               GWLfull="GWL-3.0",
-               RWLfull="RWL-4.0",
-               GWLclean="GWL-30",
-               RWLclean="RWL-40",
-               color="#AE1C27")
-    # "GWL-20"=c(GWL=2,
-               # RWL=2.7,
-               # GWLfull="GWL-2.0",
-               # RWLfull="RWL-2.7",
-               # GWLclean="GWL-20",
-               # RWLclean="RWL-27",
-               # color="#F47216")
-)
+if ("plot" %in% to_do) {
 
-NarraTRACC = list(
-    "A"=c(name="Argousier",
-          name_short="A",
-          description="Débits réduits et étiages sévères",
-          climateChain="HadGEM2-ES|historical-rcp85|ALADIN63|ADAMONT",
-          Chain="XXX",
-          color="#E66912",
-          color_light="#f7c39e"),
+    library(ggplot2)
+    library(latex2exp)
     
-    "G"=c(name="Genévrier",
-          name_short="G",
-          description="Débits en légère hausse et crues plus intenses",
-          climateChain="IPSL-CM5A-MR|historical-rcp85|HIRHAM5|ADAMONT",
-          Chain="YYY",
-          color="#0f063b",
-          color_light="#765def"),
-    
-    "E"=c(name="Érable",
-          name_short="E",
-          description="Intensification des extrêmes",
-          climateChain="MPI-ESM-LR|historical-rcp85|CCLM4-8-17|ADAMONT",
-          Chain="ZZZ",
-          color="#870000",
-          color_light="#ff6969"),
-    
-    "C"=c(name="Cèdre",
-          name_short="C",
-          description="Évolutions modérées",
-          climateChain="NorESM1-M|historical-rcp85|REMO|ADAMONT",
-          Chain="AAA",
-          color="#016367",
-          color_light="#5ef7fd")
-)
+    devtools::load_all("../../dataSHEEP_project/dataSHEEP/")
+    dev_path = "../../SHEEPfold_project/SHEEPfold/__SHEEP__"
+    list_path = list.files(dev_path, pattern='*.R$', full.names=TRUE, recursive=TRUE)
+    for (path in list_path) {
+        source(path, encoding='UTF-8')
+    }
+    assign_colors(refCOL="TRACC")
+    # dataSHEEP::load_fonts()
 
-sheet_projection_secteur(
-    Stations,
-    Secteurs,
-    dataEX_serie,
-    metaEX_serie,
-    dataEX_criteria,
-    metaEX_criteria,
-    WL=WL,
-    NarraTRACC=NarraTRACC,
-    icons=icons,
-    logo_info=logo_info,
-    Shapefiles=Shapefiles,
-    Shapefiles_mini=Shapefiles_mini,
-    figdir=figdir,
-    Pages=NULL,
-    verbose=subverbose)
+    # showtext::showtext_auto()
+    # showtext::showtext_opts(dpi = 300)
+    # sysfonts::font_add_google("Lato", "Lato")
+
+    # library(showtext)
+    # font_add("Lato",
+    #          regular="./resources/fonts/Lato/Lato-Regular.ttf",
+    #          bold="./resources/fonts/Lato/Lato-Bold.ttf")
+    # font_add("Raleway",
+    #          regular="./resources/fonts/Raleway/Raleway-Regular.ttf",
+    #          bold="./resources/fonts/Raleway/Raleway-Bold.ttf")
+    # showtext::showtext_auto()
 
 
-# confiance au dessus de 80%
 
 
-### /!\ ?
-# PAS de Z
-# RCM : REMO2015 et REMO2009 -> REMO2009
-# RCM : SMHI-RCA4 -> RCA4
+    add_path = function (x) {
+        x = c(x, file.path(resources_path, logo_dir, x["file"]))
+        names(x)[length(x)] = "path"
+        return (x)
+    }
+    logo_info = lapply(logo_info, add_path)
 
-# capitalize_first <- function(s) {
-  # paste0(toupper(substr(s, 1, 1)), substr(s, 2, nchar(s)))
-# }
+    icons_dirpath = file.path(resources_path, icons_dir)
+    icons_paths = list.files(icons_dirpath,
+                             pattern="[.]svg",
+                             recursive=TRUE, full.names=TRUE)
+    icons = lapply(icons_paths, svgparser::read_svg)
+    names(icons) = gsub(".svg", "", basename(icons_paths))
 
+    Stations_path = file.path(archive_data_path,
+                              archive_metadata_dir, 
+                              stations_selection_file)
+    Stations = ASHE::read_tibble(Stations_path)
+    Stations = filter(Stations, n_rcp85 >=4)
+
+
+    Secteurs_path = file.path(archive_data_path,
+                              archive_metadata_dir,
+                              secteurs_selection_file)
+    Secteurs = ASHE::read_tibble(Secteurs_path)
+    Secteurs$id = 1:nrow(Secteurs)
+
+    Projections_path = file.path(archive_data_path,
+                                 archive_metadata_dir,
+                                 projections_selection_file)
+    Projections = ASHE::read_tibble(Projections_path)
+    Projections = filter(Projections,
+                         EXP == "historical-rcp85" &
+                         grepl("ADAMONT", BC))
+
+    Variables_hydro_path = file.path(archive_data_path,
+                                     archive_metadata_dir,
+                                     variables_hydro_selection_file)
+    Variables_hydro = ASHE::read_tibble(Variables_hydro_path)
+
+
+    dataEX_serie = NULL
+    metaEX_serie = NULL
+
+    dataEX_criteria_climate =
+        ASHE::read_tibble(file.path(climate_data_dirpath, climate_data_file))
+    dataEX_criteria_climate$EXP = "historical-rcp85" 
+    dataEX_criteria_climate$BC = "ADAMONT"
+    dataEX_criteria_climate$HM = NA
+
+    dataEX_criteria_climate$variable =
+        paste0(dataEX_criteria_climate$Variable,
+               "_", gsub("seas[-]", "",
+                         dataEX_criteria_climate$Saison))
+    dataEX_criteria_climate =
+        dataEX_criteria_climate %>%
+        select(-Variable, -Saison, -surface) %>%
+        rename(SH=ZH) %>%
+        rename(GWL=NivRechauf) %>%
+        relocate(variable, .after=RCM) %>%
+        relocate(EXP, .before=GCM) %>%
+        relocate(BC, .before=GCM)
+
+    Ok = dataEX_criteria_climate$RCM == "SMHI-RCA4"
+    dataEX_criteria_climate$RCM[Ok] = "RCA4"
+    Ok = grepl("REMO", dataEX_criteria_climate$RCM)
+    dataEX_criteria_climate$RCM[Ok] = "REMO"
+
+    dataEX_criteria_climate = tidyr::pivot_wider(dataEX_criteria_climate,
+                                                 values_from=delta,
+                                                 names_from=variable,
+                                                 names_prefix="delta_")
+
+    metaEX_criteria_climate =
+        tibble(variable=c("RR_DJF", "RR_JJA", "TMm_DJF", "TMm_JJA"),
+               name=c("Précipitations hivernales",
+                      "Précipitations estivales",
+                      "Température moyenne hivernale",
+                      "Température moyenne estivale"))
+
+    dataEX_criteria = dataEX_criteria_climate #full_join
+
+    dataEX_criteria$climateChain = paste(dataEX_criteria$GCM,
+                                         dataEX_criteria$EXP,
+                                         dataEX_criteria$RCM,
+                                         dataEX_criteria$BC, sep="|")
+    dataEX_criteria$Chain = paste(dataEX_criteria$climateChain,
+                                  dataEX_criteria$HM, sep="|")
+
+
+    metaEX_criteria = bind_rows(metaEX_criteria_climate)
+
+    # stop()
+    if (!exists("Shapefiles") | !exists("Shapefiles_mini")) {
+        ASHE::post("### Loading shapefiles")
+
+        Shapefiles = load_shapefile(
+            computer_shp_path, Code=NULL,
+            europe_shp_path=europe_shp_path,
+            france_shp_path=france_shp_path,
+            bassinHydro_shp_path=bassinHydro_shp_path,
+            regionHydro_shp_path=regionHydro_shp_path,
+            secteurHydro_shp_path=secteurHydro_shp_path,
+            river_shp_path=river_shp_path,
+            river_selection=NULL,
+            river_length=river_length,
+            toleranceRel=toleranceRel)
+        
+        Shapefiles_mini = load_shapefile(
+            computer_shp_path, Code=NULL,
+            france_shp_path=france_shp_path,
+            bassinHydro_shp_path=bassinHydro_shp_path,
+            regionHydro_shp_path=regionHydro_shp_path,
+            secteurHydro_shp_path=secteurHydro_shp_path,
+            river_shp_path=river_shp_path,
+            river_selection=river_selection_mini,
+            river_length=river_length_mini,
+            toleranceRel=toleranceRel_mini)
+    }
+
+
+    WL = list(
+        "GWL-30"=c(GWL=3,
+                   RWL=4,
+                   GWLfull="GWL-3.0",
+                   RWLfull="RWL-4.0",
+                   GWLclean="GWL-30",
+                   RWLclean="RWL-40",
+                   color="#AE1C27")
+        # "GWL-20"=c(GWL=2,
+        # RWL=2.7,
+        # GWLfull="GWL-2.0",
+        # RWLfull="RWL-2.7",
+        # GWLclean="GWL-20",
+        # RWLclean="RWL-27",
+        # color="#F47216")
+    )
+
+    NarraTRACC = list(
+        "A"=c(name="Argousier",
+              name_short="A",
+              description="Débits réduits et étiages sévères",
+              climateChain="HadGEM2-ES|historical-rcp85|ALADIN63|ADAMONT",
+              Chain="XXX",
+              color="#E66912",
+              color_light="#f7c39e"),
+        
+        "G"=c(name="Genévrier",
+              name_short="G",
+              description="Débits en légère hausse et crues plus intenses",
+              climateChain="IPSL-CM5A-MR|historical-rcp85|HIRHAM5|ADAMONT",
+              Chain="YYY",
+              color="#0f063b",
+              color_light="#765def"),
+        
+        "E"=c(name="Érable",
+              name_short="E",
+              description="Intensification des extrêmes",
+              climateChain="MPI-ESM-LR|historical-rcp85|CCLM4-8-17|ADAMONT",
+              Chain="ZZZ",
+              color="#870000",
+              color_light="#ff6969"),
+        
+        "C"=c(name="Cèdre",
+              name_short="C",
+              description="Évolutions modérées",
+              climateChain="NorESM1-M|historical-rcp85|REMO|ADAMONT",
+              Chain="AAA",
+              color="#016367",
+              color_light="#5ef7fd")
+    )
+
+    sheet_projection_secteur(
+        Stations,
+        Secteurs,
+        dataEX_serie,
+        metaEX_serie,
+        dataEX_criteria,
+        metaEX_criteria,
+        WL=WL,
+        NarraTRACC=NarraTRACC,
+        icons=icons,
+        logo_info=logo_info,
+        Shapefiles=Shapefiles,
+        Shapefiles_mini=Shapefiles_mini,
+        figdir=figdir,
+        Pages=NULL,
+        verbose=subverbose)
+
+
+    # confiance au dessus de 80%
+
+
+    ### /!\ ?
+    # PAS de Z
+    # RCM : REMO2015 et REMO2009 -> REMO2009
+    # RCM : SMHI-RCA4 -> RCA4
+
+    # capitalize_first <- function(s) {
+    # paste0(toupper(substr(s, 1, 1)), substr(s, 2, nchar(s)))
+    # }
+}
