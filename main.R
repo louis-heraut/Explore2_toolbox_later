@@ -5,10 +5,6 @@ to_do = c(
     # "plot"
 )
 
-variable_to_compute = c(
-    "QA"
-)
-
 
 verbose =
     TRUE
@@ -18,9 +14,12 @@ subverbose =
     TRUE
 # FALSE
 
-MPI = NULL
+MPI =
+    # ""
+    "file"
 
 
+GWL = c("GWL-15", "GWL-20", "GWL-30")
 period_reference_TRACC = c("1991-01-01", "2020-12-31")
 
 
@@ -78,6 +77,47 @@ setwd(computer_work_path)
 
 library(dplyr)
 
+post = function (x, ...) {
+    if (verbose) {
+        if (MPI != "") {
+            print(paste0(formatC(as.character(rank), width = 3, 
+                                 flag = " "), "/", size - 1, " > ", x), ...)
+        }
+        else {
+            print(x, ...)
+        }
+    }
+}
+
+if (MPI != "") {
+    library(Rmpi)
+    rank = mpi.comm.rank(comm=0)
+    size = mpi.comm.size(comm=0)
+    if (size > 1) {
+        if (rank == 0) {
+            Rrank_sample = sample(0:(size-1))
+            for (root in 1:(size-1)) {
+                Rmpi::mpi.send(as.integer(Rrank_sample[root+1]),
+                               type=1, dest=root,
+                               tag=1, comm=0)
+            }
+            Rrank = Rrank_sample[1]
+        } else {
+            Rrank = Rmpi::mpi.recv(as.integer(0),
+                                   type=1,
+                                   source=0,
+                                   tag=1, comm=0)
+        }
+    } else {
+        Rrank = 0
+    }
+    post(paste0("Random rank attributed : ", Rrank))
+    
+} else {
+    rank = 0
+    size = 1
+    Rrank = 0
+}
 
 
 # if (!exists("font")) {
@@ -91,25 +131,253 @@ library(dplyr)
 
 
 if ("compute_delta" %in% to_do) {
+
+    variable_to_compute = c(
+        "^QA[_]"
+        # "^QMA[_]"
+        # "^QSA[_]",
+        # "^VCN10[_]",
+        # "^QJXA[_]"
+    )
+    
     pivot_year_TRACC_path = file.path(archive_data_path,
                                       archive_metadata_dir, 
                                       pivot_year_TRACC_file)
     pivot_year_TRACC = ASHE::read_tibble(pivot_year_TRACC_path)
 
-
     data_path = file.path(
         archive_data_path,
         "hydrological-projections_indicateurs",
         "hydrological-projections_yearly-variables_by-chain_fst")
+
+    outdir = "delta"
     
     Paths = list.files(data_path, pattern=".fst",
                        full.names=TRUE, recursive=TRUE)
+
+    Files = basename(Paths)
+    is_SAFRAN = grepl("SAFRAN", Files)
+    is_RCP85 = grepl("rcp85", Files)
+    is_ADAMONT = grepl("ADAMONT", Files)
+
+    variable_to_compute_pattern =
+        paste0("(", paste0(variable_to_compute, collapse=")|("), ")")
+    is_variable = grepl(variable_to_compute_pattern, Files)
+    
+    Paths = Paths[!is_SAFRAN &
+                  is_RCP85 &
+                  is_ADAMONT &
+                  is_variable]
+    
+    nPaths = length(Paths)
+    nGWL = length(GWL)
+
+    # stop()
+
+    modify_filename = function (x, delta_variable, gwl) {
+        info = unlist(strsplit(x, "_"))
+        if (info[2] == "yr") {
+            info[1] = delta_variable
+        } else {
+            info[1:2] = unlist(strsplit(delta_variable,
+                                        "_"))
+        }
+        filename = c(info[1:2], gwl, info[3:length(info)])
+        paste0(filename, collapse="_")
+    }
+
+    get_delta = function (deltaEX_gwl, delta_variable, gwl) {
+        deltaEX_gwl$delta =
+            (deltaEX_gwl$futur - deltaEX_gwl$historical) /
+            deltaEX_gwl$historical * 100            
+        deltaEX_gwl$GWL = gwl
+        deltaEX_gwl = rename(deltaEX_gwl,
+                             !!delta_variable:=delta)
+        deltaEX_gwl = select(deltaEX_gwl, -historical, -futur)
+        deltaEX_gwl = relocate(deltaEX_gwl,
+                               code, .after=HM)
+        deltaEX_gwl = relocate(deltaEX_gwl,
+                               GCM, .after=EXP)
+        deltaEX_gwl = relocate(deltaEX_gwl,
+                               GWL, .before=EXP)
+        return (deltaEX_gwl)
+    }
+
+
+
+    if (MPI == "file") {
+        start = ceiling(seq(1,  nPaths,
+                            by=(nPaths/size)))
+        if (any(diff(start) == 0)) {
+            start = 1:nPaths
+            end = start
+        } else {
+            end = c(start[-1]-1, nPaths)
+        }
+        if (rank == 0) {
+            post(paste0(paste0("rank ", 0:(size-1), " get ",
+                                     end-start+1, " files"),
+                              collapse="    "))
+        }
+        if (Rrank+1 > nPaths) {
+            Paths = NULL
+            Rmpi::mpi.send(as.integer(1), type=1,
+                           dest=0, tag=1, comm=0)
+            post(paste0("End signal from rank ", rank))
+        } else {
+            Paths = Paths[start[Rrank+1]:end[Rrank+1]]
+        }
+    } else {
+        Paths = Paths
+    } 
     nPaths = length(Paths)
     
+    post(paste0("All ", nPaths, " paths: ",
+                paste0(basename(Paths), collapse=" | ")))
+    
     for (i in 1:nPaths) {
+        path = Paths[i]
+        post(paste0(i, "/", nPaths,
+                          " paths -> ",
+                          round(i/nPaths*100, 1), "%"))
         
+        dataEX = ASHE::read_tibble(path)
+        
+        for (j in 1:nGWL) {
+            gwl = GWL[j]
+            
+            climateChain_regexp =
+                paste0(".*",
+                       paste0(unlist(strsplit(basename(path),
+                                              "_"))[3:6],
+                              collapse=".*"), ".*")
+            climateChain_regexp = gsub("historical-", "",
+                                       climateChain_regexp)
+            climateChain_regexp = gsub("[-]", "[-]",
+                                       climateChain_regexp)
+
+            pivot_year_TRACC_climateChain =
+                dplyr::filter(pivot_year_TRACC,
+                          grepl(climateChain_regexp, climateChain))
+
+            if (nrow(pivot_year_TRACC_climateChain) == 0) {
+                stop(paste0("no pivot year for ", path))
+            }
+            if (nrow(pivot_year_TRACC_climateChain) > 1) {
+                stop(paste0("more than one pivot year for ", path))
+            }
+
+            start_gwl =
+                pivot_year_TRACC_climateChain[[paste0("start_", gwl)]]
+            end_gwl =
+                pivot_year_TRACC_climateChain[[paste0("end_", gwl)]]
+            period_futur_TRACC = c(start_gwl, end_gwl)
+            
+            variable = paste0(unlist(strsplit(basename(path),
+                                              "_"))[1:2],
+                              collapse="_")
+            variable = gsub("_yr", "", variable)
+
+            if (variable == "VCN10") {
+                returnPeriod = 5
+                waterType = "low"
+            }
+            if (variable == "QJXA") {
+                returnPeriod = 10
+                waterType = "high"
+            }
+
+            if (variable %in% c("VCN10", "QJXA")) {
+                delta_rp_variable = paste0("delta", variable,
+                                           "-", returnPeriod)
+                deltaEX_gwl =
+                    full_join(
+                        summarise(group_by(
+                            filter(dataEX,
+                                   period_reference_TRACC[1] <= date &
+                                   date <= period_reference_TRACC[2]),
+                            code, GCM, EXP, RCM, BC, HM),
+                            historical=CARD::get_Xn(get(variable),
+                                                    returnPeriod=
+                                                        returnPeriod,
+                                                    waterType=
+                                                        waterType),
+                            .groups="drop"),
+                        
+                        summarise(group_by(
+                            filter(dataEX,
+                                   period_futur_TRACC[1] <= date &
+                                   date <= period_futur_TRACC[2]),
+                            code),
+                            futur=CARD::get_Xn(get(variable),
+                                               returnPeriod=
+                                                   returnPeriod,
+                                               waterType=
+                                                   waterType),
+                            .groups="drop"),
+                        by=c("code"))
+
+                deltaEX_gwl = get_delta(deltaEX_gwl,
+                                        delta_variable=
+                                            delta_rp_variable,
+                                        gwl=gwl)
+
+                outfile =
+                    modify_filename(basename(path),
+                                    delta_variable=
+                                        delta_rp_variable,
+                                    gwl=gwl)
+                
+                outdirpath = gsub(".*[/]", "", dirname(path))
+                outpath = file.path(today_resdir, outdir,
+                                    outdirpath, outfile)
+
+                ASHE::write_tibble(deltaEX_gwl, outpath)
+                
+            }
+
+            delta_variable = paste0("delta", variable)
+            deltaEX_gwl =
+                full_join(
+                    summarise(group_by(
+                        filter(dataEX,
+                               period_reference_TRACC[1] <= date &
+                               date <= period_reference_TRACC[2]),
+                        code, GCM, EXP, RCM, BC, HM),
+                        historical=mean(get(variable),
+                                        na.rm=TRUE),
+                        .groups="drop"),
+                    
+                    summarise(group_by(
+                        filter(dataEX,
+                               period_futur_TRACC[1] <= date &
+                               date <= period_futur_TRACC[2]),
+                        code),
+                        futur=mean(get(variable),
+                                   na.rm=TRUE),
+                        .groups="drop"),
+                    by=c("code"))
+
+            deltaEX_gwl = get_delta(deltaEX_gwl,
+                                    delta_variable=
+                                        delta_variable,
+                                    gwl=gwl)
+
+            outfile =
+                modify_filename(basename(path),
+                                delta_variable=delta_variable,
+                                gwl=gwl)
+            
+            outdirpath = gsub(".*[/]", "", dirname(path))
+            outpath = file.path(today_resdir, outdir,
+                                outdirpath, outfile)
+
+            ASHE::write_tibble(deltaEX_gwl, outpath)    
+            # stop()
+        }
     }
 }
+
 
 
 if ("plot" %in% to_do) {
@@ -138,8 +406,6 @@ if ("plot" %in% to_do) {
     #          regular="./resources/fonts/Raleway/Raleway-Regular.ttf",
     #          bold="./resources/fonts/Raleway/Raleway-Bold.ttf")
     # showtext::showtext_auto()
-
-
 
 
     add_path = function (x) {
@@ -236,7 +502,7 @@ if ("plot" %in% to_do) {
 
     # stop()
     if (!exists("Shapefiles") | !exists("Shapefiles_mini")) {
-        ASHE::post("### Loading shapefiles")
+        post("### Loading shapefiles")
 
         Shapefiles = load_shapefile(
             computer_shp_path, Code=NULL,
@@ -343,4 +609,11 @@ if ("plot" %in% to_do) {
     # capitalize_first <- function(s) {
     # paste0(toupper(substr(s, 1, 1)), substr(s, 2, nchar(s)))
     # }
+}
+
+
+
+if (MPI != "") {
+    Sys.sleep(10)
+    mpi.finalize()
 }
