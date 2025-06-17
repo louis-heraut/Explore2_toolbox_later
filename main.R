@@ -1,11 +1,5 @@
 lib_path = "./"
 
-to_do = c(
-    "compute_delta"
-    # "plot"
-)
-
-
 verbose =
     TRUE
 # FALSE
@@ -14,9 +8,21 @@ subverbose =
     TRUE
 # FALSE
 
+to_do = c(
+    # "compute_delta"
+    # "concatenate_delta"
+    "filter_delta"
+    # "plot"
+)
+
+
 MPI =
-    # ""
-    "file"
+    ""
+    # "file"
+
+
+path_to_load =
+    "/home/lheraut/Documents/INRAE/projects/Explore2_project/Explore2_toolbox_later/results/2025_06_17"
 
 
 GWL = c("GWL-15", "GWL-20", "GWL-30")
@@ -375,6 +381,120 @@ if ("compute_delta" %in% to_do) {
             ASHE::write_tibble(deltaEX_gwl, outpath)    
             # stop()
         }
+    }
+}
+
+
+if ("concatenate_delta" %in% to_do) {
+    outdir = "concatenated_delta"
+
+    Paths = list.files(file.path(path_to_load, "delta"),
+                       pattern=".fst",
+                       recursive=TRUE, full.names=TRUE)
+
+    get_var = function (x) {
+        paste0(unlist(strsplit(x, "_"))[1:2], collapse="_")
+    }
+    Variables_ALL = sapply(basename(Paths), get_var, USE.NAMES=FALSE)
+    Variables = unique(Variables_ALL)
+    nVariables = length(Variables)
+
+    if (MPI == "file") {
+        start = ceiling(seq(1,  nVariables,
+                            by=(nVariables/size)))
+        if (any(diff(start) == 0)) {
+            start = 1:nVariables
+            end = start
+        } else {
+            end = c(start[-1]-1, nVariables)
+        }
+        if (rank == 0) {
+            post(paste0(paste0("rank ", 0:(size-1), " get ",
+                               end-start+1, " files"),
+                        collapse="    "))
+        }
+        if (Rrank+1 > nVariables) {
+            Variables = NULL
+            Rmpi::mpi.send(as.integer(1), type=1,
+                           dest=0, tag=1, comm=0)
+            post(paste0("End signal from rank ", rank))
+        } else {
+            Variables = Variables[start[Rrank+1]:end[Rrank+1]]
+        }
+    }
+    nVariables = length(Variables)
+    
+    for (i in 1:nVariables) {
+        variable = Variables[i]
+        post(paste0("* ", i, "/", nVariables, " -> ",
+                    round(i/nVariables, 1)*100, "%"))
+        Paths_var = Paths[grepl(variable, basename(Paths))]
+        nPaths_var = length(Paths_var)
+        deltaEX = dplyr::tibble()
+
+        for (j in 1:nPaths_var) {
+            if (j %% 10 == 0) {
+                post(paste0("** ", j, "/", nPaths_var, " -> ",
+                            round(j/nPaths_var, 1)*100, "%"))
+            }
+            path_var = Paths_var[j]
+            deltaEX_tmp = ASHE::read_tibble(path_var)
+            deltaEX = dplyr::bind_rows(deltaEX, deltaEX_tmp)
+        }
+
+        outfile =
+            paste0(variable,
+                   "_GWL-all_historical-rcp85_all_all_all_all.fst")
+        outpath = file.path(today_resdir,
+                            outdir, outfile)
+        ASHE::write_tibble(deltaEX, outpath)
+    }
+}
+
+
+if ("filter_delta" %in% to_do) {
+
+    outdir = "filtered_concatenated_delta"
+
+    Paths = list.files(file.path(path_to_load, "concatenated_delta"),
+                       pattern=".fst",
+                       recursive=TRUE, full.names=TRUE)
+    
+    Stations_path = file.path(archive_data_path,
+                              archive_metadata_dir, 
+                              stations_selection_file)
+    Stations = ASHE::read_tibble(Stations_path)
+    Stations = filter(Stations, n_rcp85 >=4)
+    Code_selection = dplyr::filter(Stations, n_rcp85 >=4)$code
+    
+    code_Chain_outliers_path = file.path(archive_data_path,
+                                         archive_metadata_dir, 
+                                         code_Chain_outliers_file)
+    code_Chain_outliers = ASHE::read_tibble(code_Chain_outliers_path)
+
+    
+    for (path in Paths) {
+        deltaEX = ASHE::read_tibble(path)
+        
+        deltaEX = dplyr::filter(deltaEX, code %in% Code_selection)
+
+        deltaEX = tidyr::unite(deltaEX,
+                               "code_Chain",
+                               "code",
+                               "EXP", "GCM", ,
+                               "RCM", "BC",
+                               "HM", sep="_",
+                               remove=FALSE)
+        deltaEX = dplyr::filter(deltaEX,
+                                !(code_Chain %in%
+                                  code_Chain_outliers$code_Chain))
+        deltaEX = dplyr::select(deltaEX, -code_Chain)
+        
+        outpath = file.path(today_resdir,
+                            outdir,
+                            basename(path))
+        outpath = gsub("_all.fst", "_all_filtered.fst", outpath)
+        ASHE::write_tibble(deltaEX, outpath)
     }
 }
 

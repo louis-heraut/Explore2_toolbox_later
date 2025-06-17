@@ -60,13 +60,15 @@ archive_metadata_dir = "metadata"
 ### 2.1 Hydro _____________________________________________________
 hydro_data_dirpath = file.path(archive_data_path, "")
 projections_selection_file = "chaines_simulations_Explore2.csv"
-stations_selection_file = "stations_selection.csv"
-variables_hydro_selection_file = "variables_selection.csv"
+stations_selection_file = "stations_Explore2.csv"
+variables_hydro_selection_file =
+    "indicateurs_hydrologiques_agregees_Explore2.csv"
+code_Chain_outliers_file = "code_Chain_outliers_Explore2.csv"
 
 ### 2.2 Climate ___________________________________________________
 climate_data_dirpath = file.path(computer_work_path, "climate_data")
 climate_data_file = "climatZH.csv"
-pivot_year_TRACC_file = "annees_pivots_TRACC.csv" 
+pivot_year_TRACC_file = "annees_pivots_TRACC_Explore2.csv" 
 
 ### 2.3 Recharge ___________________________________________________
 recharge_data_dirpath = file.path(archive_data_path, "")
