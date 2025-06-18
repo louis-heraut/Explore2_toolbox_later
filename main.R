@@ -11,7 +11,8 @@ subverbose =
 to_do = c(
     # "compute_delta"
     # "concatenate_delta"
-    "filter_delta"
+    # "filter_delta"
+    "concatenate_delta_QM"
     # "plot"
 )
 
@@ -385,6 +386,11 @@ if ("compute_delta" %in% to_do) {
 }
 
 
+get_var = function (x) {
+    paste0(unlist(strsplit(x, "_"))[1:2], collapse="_")
+}
+
+
 if ("concatenate_delta" %in% to_do) {
     outdir = "concatenated_delta"
 
@@ -392,9 +398,6 @@ if ("concatenate_delta" %in% to_do) {
                        pattern=".fst",
                        recursive=TRUE, full.names=TRUE)
 
-    get_var = function (x) {
-        paste0(unlist(strsplit(x, "_"))[1:2], collapse="_")
-    }
     Variables_ALL = sapply(basename(Paths), get_var, USE.NAMES=FALSE)
     Variables = unique(Variables_ALL)
     nVariables = length(Variables)
@@ -496,6 +499,45 @@ if ("filter_delta" %in% to_do) {
         outpath = gsub("_all.fst", "_all_filtered.fst", outpath)
         ASHE::write_tibble(deltaEX, outpath)
     }
+}
+
+
+Months = c("jan", "feb", "mar", "apr",
+           "may", "jun", "jul", "aug",
+           "sep", "oct", "nov", "dec")
+GWL_year = c(2030, 2050, 2100)
+# names(GWL_year) = GWL
+
+if ("concatenate_delta_QM" %in% to_do) {
+
+    outdir = "filtered_concatenated_delta_QM"
+
+    Paths = list.files(file.path(path_to_load, "concatenated_delta"),
+                       pattern=".fst",
+                       recursive=TRUE, full.names=TRUE)
+    Paths = Paths[grepl("QMA", Paths)]
+    
+    deltaEX = dplyr::tibble()
+    for (path in Paths) {
+        print(path)
+        
+        deltaEX_tmp = ASHE::read_tibble(path)
+        
+        variable = get_var(basename(path))
+        month = gsub(".*[_]", "", variable)
+        month_id = formatC(which(Months == month), width=2,
+                          flag="0")
+        deltaEX_tmp$date = GWL_year[sapply(deltaEX_tmp$GWL,
+                                           match, table=GWL)]
+        deltaEX_tmp$date = as.Date(paste0(deltaEX_tmp$date,
+                                          "-", month_id, "-01"))
+        deltaEX_tmp = dplyr::relocate(deltaEX_tmp, date,
+                                      .after=code)
+        deltaEX = dplyr::bind_rows(deltaEX, deltaEX_tmp)
+    }
+
+    
+    
 }
 
 
