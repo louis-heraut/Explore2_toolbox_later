@@ -11,9 +11,9 @@ subverbose =
 to_do = c(
     # "compute_delta"
     # "concatenate_delta"
-    # "filter_delta"
-    "concatenate_delta_QM"
-    # "plot"
+    # "filter_concatenate_delta"
+    # "reshape_filter_concatenate_delta"
+    "plot"
 )
 
 
@@ -426,6 +426,9 @@ if ("concatenate_delta" %in% to_do) {
         }
     }
     nVariables = length(Variables)
+
+    post(paste0("All ", nVariables, " variables: ",
+                paste0(Variables, collapse=" | ")))
     
     for (i in 1:nVariables) {
         variable = Variables[i]
@@ -447,7 +450,7 @@ if ("concatenate_delta" %in% to_do) {
 
         outfile =
             paste0(variable,
-                   "_GWL-all_historical-rcp85_all_all_all_all.fst")
+                   "_GWL-all_historical-rcp85_all_all_ADAMONT_all.fst")
         outpath = file.path(today_resdir,
                             outdir, outfile)
         ASHE::write_tibble(deltaEX, outpath)
@@ -455,7 +458,7 @@ if ("concatenate_delta" %in% to_do) {
 }
 
 
-if ("filter_delta" %in% to_do) {
+if ("filter_concatenate_delta" %in% to_do) {
 
     outdir = "filtered_concatenated_delta"
 
@@ -508,36 +511,101 @@ Months = c("jan", "feb", "mar", "apr",
 GWL_year = c(2030, 2050, 2100)
 # names(GWL_year) = GWL
 
-if ("concatenate_delta_QM" %in% to_do) {
+if ("reshape_filter_concatenate_delta" %in% to_do) {
 
-    outdir = "filtered_concatenated_delta_QM"
+    outdir = "reshaped_filterd_concatenated_delta"
 
-    Paths = list.files(file.path(path_to_load, "concatenated_delta"),
+    Paths = list.files(file.path(path_to_load,
+                                 "filtered_concatenated_delta"),
                        pattern=".fst",
                        recursive=TRUE, full.names=TRUE)
-    Paths = Paths[grepl("QMA", Paths)]
-    
-    deltaEX = dplyr::tibble()
-    for (path in Paths) {
-        print(path)
-        
-        deltaEX_tmp = ASHE::read_tibble(path)
-        
-        variable = get_var(basename(path))
-        month = gsub(".*[_]", "", variable)
-        month_id = formatC(which(Months == month), width=2,
-                          flag="0")
-        deltaEX_tmp$date = GWL_year[sapply(deltaEX_tmp$GWL,
-                                           match, table=GWL)]
-        deltaEX_tmp$date = as.Date(paste0(deltaEX_tmp$date,
-                                          "-", month_id, "-01"))
-        deltaEX_tmp = dplyr::relocate(deltaEX_tmp, date,
-                                      .after=code)
-        deltaEX = dplyr::bind_rows(deltaEX, deltaEX_tmp)
-    }
 
+
+    Variables_ALL = sapply(basename(Paths), get_var, USE.NAMES=FALSE)
+    Variables = unique(Variables_ALL)
+    Variables = Variables[!grepl("deltaQMA", Variables)]
+    Variables = c("deltaQMA_month", Variables)
+    nVariables = length(Variables)
+
+    if (MPI == "file") {
+        start = ceiling(seq(1, nVariables,
+                            by=(nVariables/size)))
+        if (any(diff(start) == 0)) {
+            start = 1:nVariables
+            end = start
+        } else {
+            end = c(start[-1]-1, nVariables)
+        }
+        if (rank == 0) {
+            post(paste0(paste0("rank ", 0:(size-1), " get ",
+                               end-start+1, " files"),
+                        collapse="    "))
+        }
+        if (Rrank+1 > nVariables) {
+            Variables = NULL
+            Rmpi::mpi.send(as.integer(1), type=1,
+                           dest=0, tag=1, comm=0)
+            post(paste0("End signal from rank ", rank))
+        } else {
+            Variables = Variables[start[Rrank+1]:end[Rrank+1]]
+        }
+    }
+    nVariables = length(Variables)
+
+    post(paste0("All ", nVariables, " variables: ",
+                paste0(Variables, collapse=" | ")))
     
-    
+    for (i in 1:nVariables) {
+        variable = Variables[i]
+        post(paste0("* ", i, "/", nVariables, " -> ",
+                    round(i/nVariables, 1)*100, "%"))
+
+        if (variable == "deltaQMA_month") {
+            Paths_var = Paths[grepl("QMA", Paths)]
+
+            deltaEX = dplyr::tibble()
+            for (path_var in Paths_var) {                
+                deltaEX_tmp = ASHE::read_tibble(path_var)
+                
+                variable = get_var(basename(path_var))
+                month = gsub(".*[_]", "", variable)
+                month_id = formatC(which(Months == month), width=2,
+                                   flag="0")
+                deltaEX_tmp$date = GWL_year[sapply(deltaEX_tmp$GWL,
+                                                   match, table=GWL)]
+                deltaEX_tmp$date = as.Date(paste0(deltaEX_tmp$date,
+                                                  "-", month_id, "-01"))
+                deltaEX_tmp = dplyr::relocate(deltaEX_tmp, date,
+                                              .after=code)
+                names(deltaEX_tmp)[grepl("deltaQMA", names(deltaEX_tmp))] =
+                    "deltaQMA"
+                deltaEX = dplyr::bind_rows(deltaEX, deltaEX_tmp)
+            }
+        } else {
+            path_var = Paths[grepl(variable, Paths)]
+            deltaEX = ASHE::read_tibble(path_var)
+        }
+        
+        SH = unique(substr(deltaEX$code, 1, 2))
+        nSH = length(SH)
+
+        for (j in 1:nSH) {
+            if (j %% 10 == 0) {
+                post(paste0("** ", j, "/", nSH, " -> ",
+                            round(j/nSH, 1)*100, "%"))
+            }
+            sh = SH[j]
+            deltaEX_sh = dplyr::filter(deltaEX, substr(code, 1, 2) == sh)
+            outfile = paste0(
+                variable,
+                "_GWL-all_historical-rcp85_all_all_ADAMONT_all_filtered_",
+                sh, ".fst")
+            outpath = file.path(today_resdir,
+                                outdir, sh,
+                                outfile)
+            ASHE::write_tibble(deltaEX_sh, outpath)
+        }
+    }
 }
 
 
@@ -614,8 +682,10 @@ if ("plot" %in% to_do) {
     dataEX_serie = NULL
     metaEX_serie = NULL
 
+    dataEX_criteria_climate_path = file.path(climate_data_dirpath,
+                                             climate_data_file)
     dataEX_criteria_climate =
-        ASHE::read_tibble(file.path(climate_data_dirpath, climate_data_file))
+        ASHE::read_tibble(dataEX_criteria_climate_path)
     dataEX_criteria_climate$EXP = "historical-rcp85" 
     dataEX_criteria_climate$BC = "ADAMONT"
     dataEX_criteria_climate$HM = NA
@@ -650,19 +720,40 @@ if ("plot" %in% to_do) {
                       "Température moyenne hivernale",
                       "Température moyenne estivale"))
 
-    dataEX_criteria = dataEX_criteria_climate #full_join
 
-    dataEX_criteria$climateChain = paste(dataEX_criteria$GCM,
-                                         dataEX_criteria$EXP,
-                                         dataEX_criteria$RCM,
-                                         dataEX_criteria$BC, sep="|")
-    dataEX_criteria$Chain = paste(dataEX_criteria$climateChain,
-                                  dataEX_criteria$HM, sep="|")
+    dataEX_criteria_climate = tidyr::unite(dataEX_criteria_climate,
+                                           climateChain,
+                                           GCM, EXP,
+                                           RCM, BC,
+                                           sep="_",
+                                           remove=FALSE)
+
+    dataEX_criteria_climate = tidyr::unite(dataEX_criteria_climate,
+                                           Chain,
+                                           climateChain,
+                                           HM, sep="_",
+                                           remove=FALSE)
+    
+    dataEX_criteria_climate =
+        dplyr::relocate(dataEX_criteria_climate,
+                        climateChain, .after=HM)
+    dataEX_criteria_climate =
+        dplyr::relocate(dataEX_criteria_climate,
+                        Chain, .after=climateChain)
 
 
-    metaEX_criteria = bind_rows(metaEX_criteria_climate)
 
-    # stop()
+    dataEX_criteria_hydro_path = file.path(hydro_data_dirpath,
+                                           hydro_data_file)
+    
+    dataEX_criteria_hydro = ASHE::read_tibble(dataEX_criteria_hydro_path)
+    # metaEX_criteria_hydro
+
+    # dataEX_serie_hydro
+    # metaEX_serie_hydro
+
+    
+    stop()
     if (!exists("Shapefiles") | !exists("Shapefiles_mini")) {
         post("### Loading shapefiles")
 
@@ -745,10 +836,12 @@ if ("plot" %in% to_do) {
     sheet_projection_secteur(
         Stations,
         Secteurs,
-        dataEX_serie,
-        metaEX_serie,
-        dataEX_criteria,
-        metaEX_criteria,
+        dataEX_criteria_climate,
+        metaEX_criteria_climate,
+        dataEX_criteria_hydro,
+        metaEX_criteria_hydro,
+        dataEX_serie_hydro,
+        metaEX_serie_hydro,
         WL=WL,
         NarraTRACC=NarraTRACC,
         icons=icons,

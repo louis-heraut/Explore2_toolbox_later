@@ -53,8 +53,7 @@ dev_lib_path = '/home/lheraut/Documents/INRAE/project/'
 
 ## 2. INPUT DIRECTORIES ______________________________________________
 archive_data_path = "/media/lheraut/Explore2"
-# archive_data_path = "/home/lheraut/Bureau"
-secteurs_selection_file = "secteurs_selection.csv"
+secteurs_selection_file = "secteurs_Explore2.csv"
 archive_metadata_dir = "metadata"
 
 ### 2.1 Hydro _____________________________________________________
