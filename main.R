@@ -23,7 +23,7 @@ MPI =
 
 
 path_to_load =
-    "/home/lheraut/Documents/INRAE/projects/Explore2_project/Explore2_toolbox_later/results/2025_06_17"
+    "/home/lheraut/Documents/INRAE/projects/Explore2_project/Explore2_toolbox_later/results/2025_06_19"
 
 
 GWL = c("GWL-15", "GWL-20", "GWL-30")
@@ -140,11 +140,11 @@ if (MPI != "") {
 if ("compute_delta" %in% to_do) {
 
     variable_to_compute = c(
-        "^QA[_]"
-        # "^QMA[_]"
-        # "^QSA[_]",
-        # "^VCN10[_]",
-        # "^QJXA[_]"
+        "^QA[_]",
+        "^QMA[_]",
+        "^QSA[_]",
+        "^VCN10[_]",
+        "^QJXA[_]"
     )
     
     pivot_year_TRACC_path = file.path(archive_data_path,
@@ -181,32 +181,37 @@ if ("compute_delta" %in% to_do) {
 
     # stop()
 
-    modify_filename = function (x, delta_variable, gwl) {
+    modify_filename = function (x, variable, gwl) {
         info = unlist(strsplit(x, "_"))
         if (info[2] == "yr") {
-            info[1] = delta_variable
+            info[1] = variable
         } else {
-            info[1:2] = unlist(strsplit(delta_variable,
+            info[1:2] = unlist(strsplit(variable,
                                         "_"))
         }
         filename = c(info[1:2], gwl, info[3:length(info)])
         paste0(filename, collapse="_")
     }
 
-    get_delta = function (deltaEX_gwl, delta_variable, gwl) {
+    format_dataEX_gwl = function (dataEX_gwl, variable, gwl) {
+        dataEX_gwl$GWL = gwl
+        dataEX_gwl = relocate(dataEX_gwl,
+                              code, .after=HM)
+        dataEX_gwl = relocate(dataEX_gwl,
+                              GCM, .after=EXP)
+        dataEX_gwl = relocate(dataEX_gwl,
+                              GWL, .before=EXP)
+        return (dataEX_gwl)
+    }
+
+    get_deltaEX_gwl = function (deltaEX_gwl, variable, gwl) {
         deltaEX_gwl$delta =
             (deltaEX_gwl$futur - deltaEX_gwl$historical) /
             deltaEX_gwl$historical * 100            
-        deltaEX_gwl$GWL = gwl
         deltaEX_gwl = rename(deltaEX_gwl,
-                             !!delta_variable:=delta)
+                             !!variable:=delta)
         deltaEX_gwl = select(deltaEX_gwl, -historical, -futur)
-        deltaEX_gwl = relocate(deltaEX_gwl,
-                               code, .after=HM)
-        deltaEX_gwl = relocate(deltaEX_gwl,
-                               GCM, .after=EXP)
-        deltaEX_gwl = relocate(deltaEX_gwl,
-                               GWL, .before=EXP)
+        deltaEX_gwl = format_dataEX_gwl(deltaEX_gwl, variable, gwl)
         return (deltaEX_gwl)
     }
 
@@ -285,6 +290,32 @@ if ("compute_delta" %in% to_do) {
                               collapse="_")
             variable = gsub("_yr", "", variable)
 
+            # stop()
+            
+            if (grepl("QMA[_]", variable)) {
+                mean_variable = paste0("mean", variable)
+                
+                dataEX_gwl = summarise(group_by(
+                    filter(dataEX,
+                           period_futur_TRACC[1] <= date &
+                           date <= period_futur_TRACC[2]),
+                    code, GCM, EXP, RCM, BC, HM),
+                    !!mean_variable:=mean(get(variable),
+                                     na.rm=TRUE),
+                    .groups="drop")
+
+                dataEX_gwl = format_dataEX_gwl(dataEX_gwl, mean_variable, gwl)
+                
+                outfile =
+                    modify_filename(basename(path),
+                                    variable=mean_variable,
+                                    gwl=gwl)
+                outdirpath = gsub(".*[/]", "", dirname(path))
+                outpath = file.path(today_resdir, outdir,
+                                    outdirpath, outfile)
+                ASHE::write_tibble(dataEX_gwl, outpath)
+            }
+            
             if (variable == "VCN10") {
                 returnPeriod = 5
                 waterType = "low"
@@ -315,30 +346,27 @@ if ("compute_delta" %in% to_do) {
                             filter(dataEX,
                                    period_futur_TRACC[1] <= date &
                                    date <= period_futur_TRACC[2]),
-                            code),
+                            code, GCM, EXP, RCM, BC, HM),
                             futur=CARD::get_Xn(get(variable),
                                                returnPeriod=
                                                    returnPeriod,
                                                waterType=
                                                    waterType),
                             .groups="drop"),
-                        by=c("code"))
+                        by=c("code", "GCM", "EXP", "RCM", "BC", "HM"))
 
-                deltaEX_gwl = get_delta(deltaEX_gwl,
-                                        delta_variable=
-                                            delta_rp_variable,
-                                        gwl=gwl)
+                deltaEX_gwl = get_deltaEX_gwl(deltaEX_gwl,
+                                              variable=delta_rp_variable,
+                                              gwl=gwl)
 
                 outfile =
                     modify_filename(basename(path),
-                                    delta_variable=
+                                    variable=
                                         delta_rp_variable,
                                     gwl=gwl)
-                
                 outdirpath = gsub(".*[/]", "", dirname(path))
                 outpath = file.path(today_resdir, outdir,
                                     outdirpath, outfile)
-
                 ASHE::write_tibble(deltaEX_gwl, outpath)
                 
             }
@@ -359,27 +387,26 @@ if ("compute_delta" %in% to_do) {
                         filter(dataEX,
                                period_futur_TRACC[1] <= date &
                                date <= period_futur_TRACC[2]),
-                        code),
+                        code, GCM, EXP, RCM, BC, HM),
                         futur=mean(get(variable),
                                    na.rm=TRUE),
                         .groups="drop"),
-                    by=c("code"))
+                    by=c("code", "GCM", "EXP", "RCM", "BC", "HM"))
 
-            deltaEX_gwl = get_delta(deltaEX_gwl,
-                                    delta_variable=
-                                        delta_variable,
-                                    gwl=gwl)
+            deltaEX_gwl = get_deltaEX_gwl(deltaEX_gwl,
+                                          variable=delta_variable,
+                                          gwl=gwl)
 
             outfile =
                 modify_filename(basename(path),
-                                delta_variable=delta_variable,
+                                variable=delta_variable,
                                 gwl=gwl)
-            
             outdirpath = gsub(".*[/]", "", dirname(path))
             outpath = file.path(today_resdir, outdir,
                                 outdirpath, outfile)
+            ASHE::write_tibble(deltaEX_gwl, outpath)
 
-            ASHE::write_tibble(deltaEX_gwl, outpath)    
+            
             # stop()
         }
     }
@@ -513,7 +540,8 @@ GWL_year = c(2030, 2050, 2100)
 
 if ("reshape_filter_concatenate_delta" %in% to_do) {
 
-    outdir = "reshaped_filterd_concatenated_delta"
+    outdir_criteria = "reshaped_filterd_concatenated_delta"
+    outdir_serie = "reshaped-serie_filterd_concatenated_delta"
 
     Paths = list.files(file.path(path_to_load,
                                  "filtered_concatenated_delta"),
@@ -523,8 +551,9 @@ if ("reshape_filter_concatenate_delta" %in% to_do) {
 
     Variables_ALL = sapply(basename(Paths), get_var, USE.NAMES=FALSE)
     Variables = unique(Variables_ALL)
-    Variables = Variables[!grepl("deltaQMA", Variables)]
-    Variables = c("deltaQMA_month", Variables)
+    Variables = Variables[!grepl("QMA", Variables)]
+    Variables = c("meanQMA_month", Variables, "deltaQMA_month")
+    
     nVariables = length(Variables)
 
     if (MPI == "file") {
@@ -561,14 +590,20 @@ if ("reshape_filter_concatenate_delta" %in% to_do) {
                     round(i/nVariables, 1)*100, "%"))
 
         if (variable == "deltaQMA_month") {
-            Paths_var = Paths[grepl("QMA", Paths)]
-
+            Paths_var = Paths[grepl("deltaQMA", Paths)]
+        }
+        if (variable == "meanQMA_month") {
+            Paths_var = Paths[grepl("meanQMA", Paths)]
+        }
+                
+        if (variable == "deltaQMA_month" |
+            variable == "meanQMA_month") {
             deltaEX = dplyr::tibble()
             for (path_var in Paths_var) {                
                 deltaEX_tmp = ASHE::read_tibble(path_var)
                 
-                variable = get_var(basename(path_var))
-                month = gsub(".*[_]", "", variable)
+                var = get_var(basename(path_var))
+                month = gsub(".*[_]", "", var)
                 month_id = formatC(which(Months == month), width=2,
                                    flag="0")
                 deltaEX_tmp$date = GWL_year[sapply(deltaEX_tmp$GWL,
@@ -577,13 +612,16 @@ if ("reshape_filter_concatenate_delta" %in% to_do) {
                                                   "-", month_id, "-01"))
                 deltaEX_tmp = dplyr::relocate(deltaEX_tmp, date,
                                               .after=code)
-                names(deltaEX_tmp)[grepl("deltaQMA", names(deltaEX_tmp))] =
-                    "deltaQMA"
+                names(deltaEX_tmp)[grepl("QMA",
+                                         names(deltaEX_tmp))] =
+                    gsub("[_]month", "", variable)
                 deltaEX = dplyr::bind_rows(deltaEX, deltaEX_tmp)
             }
+            outdir = outdir_serie
         } else {
             path_var = Paths[grepl(variable, Paths)]
             deltaEX = ASHE::read_tibble(path_var)
+            outdir = outdir_criteria
         }
         
         SH = unique(substr(deltaEX$code, 1, 2))
@@ -713,12 +751,12 @@ if ("plot" %in% to_do) {
                                                  names_from=variable,
                                                  names_prefix="delta_")
 
-    metaEX_criteria_climate =
-        tibble(variable=c("RR_DJF", "RR_JJA", "TMm_DJF", "TMm_JJA"),
-               name=c("Précipitations hivernales",
-                      "Précipitations estivales",
-                      "Température moyenne hivernale",
-                      "Température moyenne estivale"))
+    # metaEX_criteria_climate =
+    #     tibble(variable=c("RR_DJF", "RR_JJA", "TMm_DJF", "TMm_JJA"),
+    #            name=c("Précipitations hivernales",
+    #                   "Précipitations estivales",
+    #                   "Température moyenne hivernale",
+    #                   "Température moyenne estivale"))
 
 
     dataEX_criteria_climate = tidyr::unite(dataEX_criteria_climate,
@@ -742,18 +780,6 @@ if ("plot" %in% to_do) {
                         Chain, .after=climateChain)
 
 
-
-    dataEX_criteria_hydro_path = file.path(hydro_data_dirpath,
-                                           hydro_data_file)
-    
-    dataEX_criteria_hydro = ASHE::read_tibble(dataEX_criteria_hydro_path)
-    # metaEX_criteria_hydro
-
-    # dataEX_serie_hydro
-    # metaEX_serie_hydro
-
-    
-    stop()
     if (!exists("Shapefiles") | !exists("Shapefiles_mini")) {
         post("### Loading shapefiles")
 
@@ -833,25 +859,72 @@ if ("plot" %in% to_do) {
               color_light="#5ef7fd")
     )
 
-    sheet_projection_secteur(
-        Stations,
-        Secteurs,
-        dataEX_criteria_climate,
-        metaEX_criteria_climate,
-        dataEX_criteria_hydro,
-        metaEX_criteria_hydro,
-        dataEX_serie_hydro,
-        metaEX_serie_hydro,
-        WL=WL,
-        NarraTRACC=NarraTRACC,
-        icons=icons,
-        logo_info=logo_info,
-        Shapefiles=Shapefiles,
-        Shapefiles_mini=Shapefiles_mini,
-        figdir=figdir,
-        Pages=NULL,
-        verbose=subverbose)
 
+
+    SH = unique(substr(Stations$code, 1, 2))
+    nSH = length(SH) 
+    
+    for (i in 1:nSH) {
+        sh = SH[i]
+        post(paste0(i, "/", nSH, " so ", round(i/nSH*100, 1),
+                    "% done -> ", sh))
+
+        Secteur = Secteurs[Secteurs$id_secteur == sh,]
+        Stations_sh = filter(Stations, substr(code, 1, 2) == sh)
+
+        
+        dataEX_criteria_hydro_dirpath_dirpath =
+            file.path(hydro_data_dirpath, hydro_criteria_dir,sh)
+        dataEX_criteria_hydro_paths =
+            list.files(dataEX_criteria_hydro_dirpath,
+                       full.names=TRUE)
+        dataEX_criteria_hydro_list = lapply(dataEX_criteria_hydro_paths,
+                                            ASHE::read_tibble)
+        dataEX_criteria_hydro =
+            purrr::reduce(dataEX_criteria_hydro_list, full_join,
+                          by=c("code", "GWL", "EXP",
+                               "GCM", "RCM", "BC", "HM"))
+        dataEX_criteria_hydro$SH = substr(dataEX_criteria_hydro$code,
+                                          1, 2)
+        dataEX_criteria_hydro = dplyr::relocate(dataEX_criteria_hydro,
+                                                SH, .before=code)
+            
+        dataEX_serie_hydro_dirpath = file.path(hydro_data_dirpath,
+                                               hydro_serie_dir, sh)
+        dataEX_serie_hydro_paths = list.files(dataEX_serie_hydro_dirpath,
+                                              full.names=TRUE)
+        dataEX_serie_hydro = lapply(dataEX_serie_hydro_paths,
+                                    ASHE::read_tibble)
+        names(dataEX_serie_hydro) =
+            gsub("[_].*", "", basename(dataEX_serie_hydro_paths))
+
+        for (j in 1:length(dataEX_serie_hydro)) {
+            dataEX_serie_hydro[[j]]$SH =
+                substr(dataEX_serie_hydro[[j]]$code, 1, 2)
+            dataEX_serie_hydro[[j]] =
+                dplyr::relocate(dataEX_serie_hydro[[j]],
+                                SH, .before=code)
+        }
+        
+        sheet_projection_secteur(
+            Stations,
+            Secteurs,
+            dataEX_criteria_climate,
+            dataEX_criteria_hydro,
+            dataEX_serie_hydro,
+            # metaEX_criteria_climate,
+            # metaEX_criteria_hydro,
+            # metaEX_serie_hydro,
+            WL=WL,
+            NarraTRACC=NarraTRACC,
+            icons=icons,
+            logo_info=logo_info,
+            Shapefiles=Shapefiles,
+            Shapefiles_mini=Shapefiles_mini,
+            figdir=figdir,
+            Pages=NULL,
+            verbose=subverbose)
+    }
 
     # confiance au dessus de 80%
 

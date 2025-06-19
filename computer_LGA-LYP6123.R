@@ -57,7 +57,13 @@ secteurs_selection_file = "secteurs_Explore2.csv"
 archive_metadata_dir = "metadata"
 
 ### 2.1 Hydro _____________________________________________________
-hydro_data_dirpath = file.path(archive_data_path, "")
+hydro_data_dirpath =
+    file.path(archive_data_path,
+              "hydrological-projections_indicateurs-TRACC")
+hydro_criteria_dir =
+    "hydrological-projections_changes-by-warming-level_by-code_filtered-fst"
+hydro_serie_dir =
+    "hydrological-projections_series-by-warming-level_by-code_filtered-fst"
 projections_selection_file = "chaines_simulations_Explore2.csv"
 stations_selection_file = "stations_Explore2.csv"
 variables_hydro_selection_file =
