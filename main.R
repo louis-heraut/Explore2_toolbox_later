@@ -683,7 +683,6 @@ dataEX_criteria_hydro_mean =
 
 
 if ("plot" %in% to_do) {
-
     library(ggplot2)
     library(latex2exp)
     
@@ -859,12 +858,14 @@ if ("plot" %in% to_do) {
         # color="#F47216")
     )
 
+
+    ####### /!\ climateChain pas le meme ordre que Chain
     NarraTRACC = list(
         "A"=c(name="Argousier",
               name_short="A",
               description="Débits réduits et étiages sévères",
               climateChain="HadGEM2-ES_historical-rcp85_ALADIN63_ADAMONT",
-              Chain="XXX",
+              Chain="historical-rcp85_HadGEM2-ES_ALADIN63_ADAMONT_SMASH",
               color="#E66912",
               color_light="#f7c39e"),
         
@@ -872,7 +873,7 @@ if ("plot" %in% to_do) {
               name_short="G",
               description="Débits en légère hausse et crues plus intenses",
               climateChain="IPSL-CM5A-MR_historical-rcp85_HIRHAM5_ADAMONT",
-              Chain="YYY",
+              Chain="historical-rcp85_IPSL-CM5A-MR_HIRHAM5_ADAMONT_SMASH",
               color="#0f063b",
               color_light="#765def"),
         
@@ -880,7 +881,7 @@ if ("plot" %in% to_do) {
               name_short="E",
               description="Intensification des extrêmes",
               climateChain="MPI-ESM-LR_historical-rcp85_CCLM4-8-17_ADAMONT",
-              Chain="ZZZ",
+              Chain="historical-rcp85_MPI-ESM-LR_CCLM4-8-17_ADAMONT_SMASH",
               color="#870000",
               color_light="#ff6969"),
         
@@ -888,7 +889,7 @@ if ("plot" %in% to_do) {
               name_short="C",
               description="Évolutions modérées",
               climateChain="NorESM1-M_historical-rcp85_REMO_ADAMONT",
-              Chain="AAA",
+              Chain="historical-rcp85_NorESM1-M_REMO_ADAMONT_SMASH",
               color="#016367",
               color_light="#5ef7fd")
     )
@@ -900,6 +901,11 @@ if ("plot" %in% to_do) {
     
     for (i in 1:nSH) {
         sh = SH[i]
+
+        ####
+        sh = "K0"
+        ####
+        
         post(paste0(i, "/", nSH, " so ", round(i/nSH*100, 1),
                     "% done -> ", sh))
 
