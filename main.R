@@ -597,7 +597,9 @@ if ("reshape_filter_concatenate_delta" %in% to_do) {
         }
                 
         if (variable == "deltaQMA_month" |
-            variable == "meanQMA_month") {
+
+
+variable == "meanQMA_month") {
             deltaEX = dplyr::tibble()
             for (path_var in Paths_var) {                
                 deltaEX_tmp = ASHE::read_tibble(path_var)
@@ -645,6 +647,38 @@ if ("reshape_filter_concatenate_delta" %in% to_do) {
         }
     }
 }
+
+
+
+
+dataEX_criteria_hydro_mean = 
+    dplyr::summarise(dplyr::group_by(dataEX_criteria_hydro,
+                                     code, SH, GWL, EXP, GCM, RCM, BC),
+                     dplyr::across(.cols=where(is.numeric),
+                                   .fns=~mean(.x, na.rm=TRUE)),
+                     .groups="drop")
+
+dataEX_criteria_hydro_mean = 
+    dplyr::summarise(dplyr::group_by(dataEX_criteria_hydro_mean,
+                                     code, SH, GWL, EXP, GCM, RCM),
+                     dplyr::across(.cols=where(is.numeric),
+                                   .fns=~mean(.x, na.rm=TRUE)),
+                     .groups="drop")
+
+dataEX_criteria_hydro_mean = 
+    dplyr::summarise(dplyr::group_by(dataEX_criteria_hydro_mean,
+                                     code, SH, GWL, EXP, GCM),
+                     dplyr::across(.cols=where(is.numeric),
+                                   .fns=~mean(.x, na.rm=TRUE)),
+                     .groups="drop")
+
+dataEX_criteria_hydro_mean = 
+    dplyr::summarise(dplyr::group_by(dataEX_criteria_hydro_mean,
+                                     code, SH, GWL, EXP),
+                     dplyr::across(.cols=where(is.numeric),
+                                   .fns=~mean(.x, na.rm=TRUE)),
+                     .groups="drop")
+
 
 
 
@@ -829,7 +863,7 @@ if ("plot" %in% to_do) {
         "A"=c(name="Argousier",
               name_short="A",
               description="Débits réduits et étiages sévères",
-              climateChain="HadGEM2-ES|historical-rcp85|ALADIN63|ADAMONT",
+              climateChain="HadGEM2-ES_historical-rcp85_ALADIN63_ADAMONT",
               Chain="XXX",
               color="#E66912",
               color_light="#f7c39e"),
@@ -837,7 +871,7 @@ if ("plot" %in% to_do) {
         "G"=c(name="Genévrier",
               name_short="G",
               description="Débits en légère hausse et crues plus intenses",
-              climateChain="IPSL-CM5A-MR|historical-rcp85|HIRHAM5|ADAMONT",
+              climateChain="IPSL-CM5A-MR_historical-rcp85_HIRHAM5_ADAMONT",
               Chain="YYY",
               color="#0f063b",
               color_light="#765def"),
@@ -845,7 +879,7 @@ if ("plot" %in% to_do) {
         "E"=c(name="Érable",
               name_short="E",
               description="Intensification des extrêmes",
-              climateChain="MPI-ESM-LR|historical-rcp85|CCLM4-8-17|ADAMONT",
+              climateChain="MPI-ESM-LR_historical-rcp85_CCLM4-8-17_ADAMONT",
               Chain="ZZZ",
               color="#870000",
               color_light="#ff6969"),
@@ -853,7 +887,7 @@ if ("plot" %in% to_do) {
         "C"=c(name="Cèdre",
               name_short="C",
               description="Évolutions modérées",
-              climateChain="NorESM1-M|historical-rcp85|REMO|ADAMONT",
+              climateChain="NorESM1-M_historical-rcp85_REMO_ADAMONT",
               Chain="AAA",
               color="#016367",
               color_light="#5ef7fd")
@@ -869,17 +903,17 @@ if ("plot" %in% to_do) {
         post(paste0(i, "/", nSH, " so ", round(i/nSH*100, 1),
                     "% done -> ", sh))
 
-        Secteur = Secteurs[Secteurs$id_secteur == sh,]
+        secteur = Secteurs[Secteurs$id_secteur == sh,]
         Stations_sh = filter(Stations, substr(code, 1, 2) == sh)
 
-        
-        dataEX_criteria_hydro_dirpath_dirpath =
+        dataEX_criteria_hydro_dirpath =
             file.path(hydro_data_dirpath, hydro_criteria_dir,sh)
         dataEX_criteria_hydro_paths =
             list.files(dataEX_criteria_hydro_dirpath,
                        full.names=TRUE)
         dataEX_criteria_hydro_list = lapply(dataEX_criteria_hydro_paths,
                                             ASHE::read_tibble)
+
         dataEX_criteria_hydro =
             purrr::reduce(dataEX_criteria_hydro_list, full_join,
                           by=c("code", "GWL", "EXP",
@@ -907,8 +941,8 @@ if ("plot" %in% to_do) {
         }
         
         sheet_projection_secteur(
-            Stations,
-            Secteurs,
+            Stations_sh,
+            secteur,
             dataEX_criteria_climate,
             dataEX_criteria_hydro,
             dataEX_serie_hydro,
