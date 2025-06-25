@@ -649,6 +649,11 @@ variable == "meanQMA_month") {
 }
 
 
+
+
+
+
+
 if ("plot" %in% to_do) {
     library(ggplot2)
     library(latex2exp)
@@ -720,20 +725,20 @@ if ("plot" %in% to_do) {
     dataEX_serie = NULL
     metaEX_serie = NULL
 
-    dataEX_criteria_climate_path = file.path(climate_data_dirpath,
+    dataEX_criteria_climate_bySH_path = file.path(climate_data_dirpath,
                                              climate_data_file)
-    dataEX_criteria_climate =
-        ASHE::read_tibble(dataEX_criteria_climate_path)
-    dataEX_criteria_climate$EXP = "historical-rcp85" 
-    dataEX_criteria_climate$BC = "ADAMONT"
-    dataEX_criteria_climate$HM = NA
+    dataEX_criteria_climate_bySH =
+        ASHE::read_tibble(dataEX_criteria_climate_bySH_path)
+    dataEX_criteria_climate_bySH$EXP = "historical-rcp85" 
+    dataEX_criteria_climate_bySH$BC = "ADAMONT"
+    dataEX_criteria_climate_bySH$HM = NA
 
-    dataEX_criteria_climate$variable =
-        paste0(dataEX_criteria_climate$Variable,
+    dataEX_criteria_climate_bySH$variable =
+        paste0(dataEX_criteria_climate_bySH$Variable,
                "_", gsub("seas[-]", "",
-                         dataEX_criteria_climate$Saison))
-    dataEX_criteria_climate =
-        dataEX_criteria_climate %>%
+                         dataEX_criteria_climate_bySH$Saison))
+    dataEX_criteria_climate_bySH =
+        dataEX_criteria_climate_bySH %>%
         select(-Variable, -Saison, -surface) %>%
         rename(SH=ZH) %>%
         rename(GWL=NivRechauf) %>%
@@ -741,16 +746,17 @@ if ("plot" %in% to_do) {
         relocate(EXP, .before=GCM) %>%
         relocate(BC, .before=GCM)
 
-    Ok = dataEX_criteria_climate$RCM == "SMHI-RCA4"
-    dataEX_criteria_climate$RCM[Ok] = "RCA4"
-    Ok = grepl("REMO", dataEX_criteria_climate$RCM)
-    dataEX_criteria_climate$RCM[Ok] = "REMO"
+    Ok = dataEX_criteria_climate_bySH$RCM == "SMHI-RCA4"
+    dataEX_criteria_climate_bySH$RCM[Ok] = "RCA4"
+    Ok = grepl("REMO", dataEX_criteria_climate_bySH$RCM)
+    dataEX_criteria_climate_bySH$RCM[Ok] = "REMO"
 
-    dataEX_criteria_climate = tidyr::pivot_wider(dataEX_criteria_climate,
-                                                 values_from=delta,
-                                                 names_from=variable,
-                                                 names_prefix="delta_")
-
+    dataEX_criteria_climate_bySH =
+        tidyr::pivot_wider(dataEX_criteria_climate_bySH,
+                           values_from=delta,
+                           names_from=variable,
+                           names_prefix="delta_")
+    
     # metaEX_criteria_climate =
     #     tibble(variable=c("RR_DJF", "RR_JJA", "TMm_DJF", "TMm_JJA"),
     #            name=c("Précipitations hivernales",
@@ -759,24 +765,26 @@ if ("plot" %in% to_do) {
     #                   "Température moyenne estivale"))
 
 
-    dataEX_criteria_climate = tidyr::unite(dataEX_criteria_climate,
-                                           climateChain,
-                                           GCM, EXP,
-                                           RCM, BC,
-                                           sep="_",
-                                           remove=FALSE)
+    dataEX_criteria_climate_bySH =
+        tidyr::unite(dataEX_criteria_climate_bySH,
+                     climateChain,
+                     EXP, GCM,
+                     RCM, BC,
+                     sep="_",
+                     remove=FALSE)
 
-    dataEX_criteria_climate = tidyr::unite(dataEX_criteria_climate,
-                                           Chain,
-                                           climateChain,
-                                           HM, sep="_",
-                                           remove=FALSE)
+    dataEX_criteria_climate_bySH =
+        tidyr::unite(dataEX_criteria_climate_bySH,
+                     Chain,
+                     climateChain,
+                     HM, sep="_",
+                     remove=FALSE)
     
-    dataEX_criteria_climate =
-        dplyr::relocate(dataEX_criteria_climate,
+    dataEX_criteria_climate_bySH =
+        dplyr::relocate(dataEX_criteria_climate_bySH,
                         climateChain, .after=HM)
-    dataEX_criteria_climate =
-        dplyr::relocate(dataEX_criteria_climate,
+    dataEX_criteria_climate_bySH =
+        dplyr::relocate(dataEX_criteria_climate_bySH,
                         Chain, .after=climateChain)
 
 
@@ -827,41 +835,51 @@ if ("plot" %in% to_do) {
 
 
     ####### /!\ climateChain pas le meme ordre que Chain
-    NarraTRACC = list(
-        "A"=c(name="Argousier",
-              name_short="A",
-              description="Débits réduits et étiages sévères",
-              climateChain="HadGEM2-ES_historical-rcp85_ALADIN63_ADAMONT",
-              Chain="historical-rcp85_HadGEM2-ES_ALADIN63_ADAMONT_SMASH",
-              color="#E66912",
-              color_light="#f7c39e"),
+    # NarraTRACC = list(
+    #     "A"=c(name="Argousier",
+    #           name_short="A",
+    #           description="Débits réduits et étiages sévères",
+    #           climateChain="HadGEM2-ES_historical-rcp85_ALADIN63_ADAMONT",
+    #           Chain="historical-rcp85_HadGEM2-ES_ALADIN63_ADAMONT_SMASH",
+    #           color="#E66912",
+    #           color_light="#f7c39e"),
         
-        "G"=c(name="Genévrier",
-              name_short="G",
-              description="Débits en légère hausse et crues plus intenses",
-              climateChain="IPSL-CM5A-MR_historical-rcp85_HIRHAM5_ADAMONT",
-              Chain="historical-rcp85_IPSL-CM5A-MR_HIRHAM5_ADAMONT_SMASH",
-              color="#0f063b",
-              color_light="#765def"),
+    #     "G"=c(name="Genévrier",
+    #           name_short="G",
+    #           description="Débits en légère hausse et crues plus intenses",
+    #           climateChain="IPSL-CM5A-MR_historical-rcp85_HIRHAM5_ADAMONT",
+    #           Chain="historical-rcp85_IPSL-CM5A-MR_HIRHAM5_ADAMONT_SMASH",
+    #           color="#0f063b",
+    #           color_light="#765def"),
         
-        "E"=c(name="Érable",
-              name_short="E",
-              description="Intensification des extrêmes",
-              climateChain="MPI-ESM-LR_historical-rcp85_CCLM4-8-17_ADAMONT",
-              Chain="historical-rcp85_MPI-ESM-LR_CCLM4-8-17_ADAMONT_SMASH",
-              color="#870000",
-              color_light="#ff6969"),
+    #     "E"=c(name="Érable",
+    #           name_short="E",
+    #           description="Intensification des extrêmes",
+    #           climateChain="MPI-ESM-LR_historical-rcp85_CCLM4-8-17_ADAMONT",
+    #           Chain="historical-rcp85_MPI-ESM-LR_CCLM4-8-17_ADAMONT_SMASH",
+    #           color="#870000",
+    #           color_light="#ff6969"),
         
-        "C"=c(name="Cèdre",
-              name_short="C",
-              description="Évolutions modérées",
-              climateChain="NorESM1-M_historical-rcp85_REMO_ADAMONT",
-              Chain="historical-rcp85_NorESM1-M_REMO_ADAMONT_SMASH",
-              color="#016367",
-              color_light="#5ef7fd")
-    )
+    #     "C"=c(name="Cèdre",
+    #           name_short="C",
+    #           description="Évolutions modérées",
+    #           climateChain="NorESM1-M_historical-rcp85_REMO_ADAMONT",
+    #           Chain="historical-rcp85_NorESM1-M_REMO_ADAMONT_SMASH",
+    #           color="#016367",
+    #           color_light="#5ef7fd")
+    # )
 
 
+    NarraTRACC_selection_Paths =
+        list.files(file.path(archive_data_path,
+                             archive_metadata_dir),
+                   pattern="narraTRACC",
+                   full.names=TRUE)
+    NarraTRACC_selection = lapply(NarraTRACC_selection_Paths,
+                                  ASHE::read_tibble)
+    names(NarraTRACC_selection) =
+        gsub("[_].*", "", basename(NarraTRACC_selection_Paths))
+    
 
     SH = unique(substr(Stations$code, 1, 2))
     nSH = length(SH) 
@@ -870,7 +888,7 @@ if ("plot" %in% to_do) {
         sh = SH[i]
 
         ####
-        sh = "K0"
+        sh = "K2"
         ####
         
         post(paste0(i, "/", nSH, " so ", round(i/nSH*100, 1),
@@ -916,14 +934,14 @@ if ("plot" %in% to_do) {
         sheet_projection_secteur(
             Stations_sh,
             secteur,
-            dataEX_criteria_climate,
+            dataEX_criteria_climate_bySH,
             dataEX_criteria_hydro,
             dataEX_serie_hydro,
             # metaEX_criteria_climate,
             # metaEX_criteria_hydro,
             # metaEX_serie_hydro,
             WL=WL,
-            NarraTRACC=NarraTRACC,
+            NarraTRACC_selection=NarraTRACC_selection,
             icons=icons,
             logo_info=logo_info,
             Shapefiles=Shapefiles,
