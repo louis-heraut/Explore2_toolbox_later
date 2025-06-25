@@ -649,39 +649,6 @@ variable == "meanQMA_month") {
 }
 
 
-
-
-dataEX_criteria_hydro_mean = 
-    dplyr::summarise(dplyr::group_by(dataEX_criteria_hydro,
-                                     code, SH, GWL, EXP, GCM, RCM, BC),
-                     dplyr::across(.cols=where(is.numeric),
-                                   .fns=~mean(.x, na.rm=TRUE)),
-                     .groups="drop")
-
-dataEX_criteria_hydro_mean = 
-    dplyr::summarise(dplyr::group_by(dataEX_criteria_hydro_mean,
-                                     code, SH, GWL, EXP, GCM, RCM),
-                     dplyr::across(.cols=where(is.numeric),
-                                   .fns=~mean(.x, na.rm=TRUE)),
-                     .groups="drop")
-
-dataEX_criteria_hydro_mean = 
-    dplyr::summarise(dplyr::group_by(dataEX_criteria_hydro_mean,
-                                     code, SH, GWL, EXP, GCM),
-                     dplyr::across(.cols=where(is.numeric),
-                                   .fns=~mean(.x, na.rm=TRUE)),
-                     .groups="drop")
-
-dataEX_criteria_hydro_mean = 
-    dplyr::summarise(dplyr::group_by(dataEX_criteria_hydro_mean,
-                                     code, SH, GWL, EXP),
-                     dplyr::across(.cols=where(is.numeric),
-                                   .fns=~mean(.x, na.rm=TRUE)),
-                     .groups="drop")
-
-
-
-
 if ("plot" %in% to_do) {
     library(ggplot2)
     library(latex2exp)
