@@ -722,48 +722,11 @@ if ("plot" %in% to_do) {
     Variables_hydro = ASHE::read_tibble(Variables_hydro_path)
 
 
-    dataEX_serie = NULL
-    metaEX_serie = NULL
-
-    dataEX_criteria_climate_bySH_path = file.path(climate_data_dirpath,
-                                             climate_data_file)
+    dataEX_criteria_climate_bySH_path =
+        file.path(climate_data_dirpath,
+                  climate_data_file)
     dataEX_criteria_climate_bySH =
         ASHE::read_tibble(dataEX_criteria_climate_bySH_path)
-    dataEX_criteria_climate_bySH$EXP = "historical-rcp85" 
-    dataEX_criteria_climate_bySH$BC = "ADAMONT"
-    dataEX_criteria_climate_bySH$HM = NA
-
-    dataEX_criteria_climate_bySH$variable =
-        paste0(dataEX_criteria_climate_bySH$Variable,
-               "_", gsub("seas[-]", "",
-                         dataEX_criteria_climate_bySH$Saison))
-    dataEX_criteria_climate_bySH =
-        dataEX_criteria_climate_bySH %>%
-        select(-Variable, -Saison, -surface) %>%
-        rename(SH=ZH) %>%
-        rename(GWL=NivRechauf) %>%
-        relocate(variable, .after=RCM) %>%
-        relocate(EXP, .before=GCM) %>%
-        relocate(BC, .before=GCM)
-
-    Ok = dataEX_criteria_climate_bySH$RCM == "SMHI-RCA4"
-    dataEX_criteria_climate_bySH$RCM[Ok] = "RCA4"
-    Ok = grepl("REMO", dataEX_criteria_climate_bySH$RCM)
-    dataEX_criteria_climate_bySH$RCM[Ok] = "REMO"
-
-    dataEX_criteria_climate_bySH =
-        tidyr::pivot_wider(dataEX_criteria_climate_bySH,
-                           values_from=delta,
-                           names_from=variable,
-                           names_prefix="delta_")
-    
-    # metaEX_criteria_climate =
-    #     tibble(variable=c("RR_DJF", "RR_JJA", "TMm_DJF", "TMm_JJA"),
-    #            name=c("Précipitations hivernales",
-    #                   "Précipitations estivales",
-    #                   "Température moyenne hivernale",
-    #                   "Température moyenne estivale"))
-
 
     dataEX_criteria_climate_bySH =
         tidyr::unite(dataEX_criteria_climate_bySH,
@@ -774,20 +737,10 @@ if ("plot" %in% to_do) {
                      remove=FALSE)
 
     dataEX_criteria_climate_bySH =
-        tidyr::unite(dataEX_criteria_climate_bySH,
-                     Chain,
-                     climateChain,
-                     HM, sep="_",
-                     remove=FALSE)
+        dplyr::relocate(dataEX_criteria_climate_bySH,
+                        climateChain, .after=BC)
+
     
-    dataEX_criteria_climate_bySH =
-        dplyr::relocate(dataEX_criteria_climate_bySH,
-                        climateChain, .after=HM)
-    dataEX_criteria_climate_bySH =
-        dplyr::relocate(dataEX_criteria_climate_bySH,
-                        Chain, .after=climateChain)
-
-
     if (!exists("Shapefiles") | !exists("Shapefiles_mini")) {
         post("### Loading shapefiles")
 
@@ -825,6 +778,10 @@ if ("plot" %in% to_do) {
                    RWLclean="RWL-40",
                    color="#AE1C27")
         # "GWL-20"=c(GWL=2,
+
+
+
+        
         # RWL=2.7,
         # GWLfull="GWL-2.0",
         # RWLfull="RWL-2.7",
@@ -882,15 +839,16 @@ if ("plot" %in% to_do) {
     
 
     SH = unique(substr(Stations$code, 1, 2))
+
+    ###
+    SH = SH[grepl("O", SH)]
+    # SH = "K2"
+    ###
+    
     nSH = length(SH) 
     
     for (i in 1:nSH) {
         sh = SH[i]
-
-        ####
-        sh = "K2"
-        ####
-        
         post(paste0(i, "/", nSH, " so ", round(i/nSH*100, 1),
                     "% done -> ", sh))
 

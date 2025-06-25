@@ -72,7 +72,7 @@ code_Chain_outliers_file = "code_Chain_outliers_Explore2.csv"
 
 ### 2.2 Climate ___________________________________________________
 climate_data_dirpath = file.path(computer_work_path, "climate_data")
-climate_data_file = "climatZH.csv"
+climate_data_file = "deltaRR_deltaTMm_season_GWL.csv"
 pivot_year_TRACC_file = "annees_pivots_TRACC_Explore2.csv" 
 
 ### 2.3 Recharge ___________________________________________________
