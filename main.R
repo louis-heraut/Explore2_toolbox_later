@@ -722,25 +722,55 @@ if ("plot" %in% to_do) {
     Variables_hydro = ASHE::read_tibble(Variables_hydro_path)
 
 
-    dataEX_criteria_climate_bySH_path =
+    dataEX_criteria_climate_secteur_path =
         file.path(climate_data_dirpath,
                   climate_data_file)
-    dataEX_criteria_climate_bySH =
-        ASHE::read_tibble(dataEX_criteria_climate_bySH_path)
+    dataEX_criteria_climate_secteur =
+        ASHE::read_tibble(dataEX_criteria_climate_secteur_path)
 
-    dataEX_criteria_climate_bySH =
-        tidyr::unite(dataEX_criteria_climate_bySH,
+    dataEX_criteria_climate_secteur =
+        tidyr::unite(dataEX_criteria_climate_secteur,
                      climateChain,
                      EXP, GCM,
                      RCM, BC,
                      sep="_",
                      remove=FALSE)
 
-    dataEX_criteria_climate_bySH =
-        dplyr::relocate(dataEX_criteria_climate_bySH,
+    dataEX_criteria_climate_secteur =
+        dplyr::relocate(dataEX_criteria_climate_secteur,
                         climateChain, .after=BC)
 
+    dataEX_criteria_recharge_MESO_path =
+        list.files(file.path(recharge_data_dirpath,
+                             recharge_criteria_MESO_dir),
+                   pattern=".csv", full.names=TRUE)
+    dataEX_criteria_recharge_MESO =
+        ASHE::read_tibble(dataEX_criteria_recharge_MESO_path)
     
+    dataEX_criteria_recharge_MESO =
+        tidyr::unite(dataEX_criteria_recharge_MESO,
+                     climateChain,
+                     EXP, GCM,
+                     RCM, BC,
+                     sep="_",
+                     remove=FALSE)
+
+    
+    dataEX_criteria_recharge_secteur_path =
+        list.files(file.path(recharge_data_dirpath,
+                             recharge_criteria_secteur_dir),
+                   pattern=".csv", full.names=TRUE)
+    dataEX_criteria_recharge_secteur =
+        ASHE::read_tibble(dataEX_criteria_recharge_secteur_path)
+    
+    dataEX_criteria_recharge_secteur =
+        tidyr::unite(dataEX_criteria_recharge_secteur,
+                     climateChain,
+                     EXP, GCM,
+                     RCM, BC,
+                     sep="_",
+                     remove=FALSE)
+
     if (!exists("Shapefiles") | !exists("Shapefiles_mini")) {
         post("### Loading shapefiles")
 
@@ -751,6 +781,7 @@ if ("plot" %in% to_do) {
             bassinHydro_shp_path=bassinHydro_shp_path,
             regionHydro_shp_path=regionHydro_shp_path,
             secteurHydro_shp_path=secteurHydro_shp_path,
+            MESO_shp_path=MESO_shp_path,
             river_shp_path=river_shp_path,
             river_selection=NULL,
             river_length=river_length,
@@ -778,10 +809,6 @@ if ("plot" %in% to_do) {
                    RWLclean="RWL-40",
                    color="#AE1C27")
         # "GWL-20"=c(GWL=2,
-
-
-
-        
         # RWL=2.7,
         # GWLfull="GWL-2.0",
         # RWLfull="RWL-2.7",
@@ -841,8 +868,8 @@ if ("plot" %in% to_do) {
     SH = unique(substr(Stations$code, 1, 2))
 
     ###
-    SH = SH[grepl("O", SH)]
-    # SH = "K2"
+    # SH = SH[grepl("V", SH)]
+    SH = "K2"
     ###
     
     nSH = length(SH) 
@@ -871,7 +898,7 @@ if ("plot" %in% to_do) {
                                           1, 2)
         dataEX_criteria_hydro = dplyr::relocate(dataEX_criteria_hydro,
                                                 SH, .before=code)
-            
+
         dataEX_serie_hydro_dirpath = file.path(hydro_data_dirpath,
                                                hydro_serie_dir, sh)
         dataEX_serie_hydro_paths = list.files(dataEX_serie_hydro_dirpath,
@@ -892,9 +919,11 @@ if ("plot" %in% to_do) {
         sheet_projection_secteur(
             Stations_sh,
             secteur,
-            dataEX_criteria_climate_bySH,
+            dataEX_criteria_climate_secteur,
             dataEX_criteria_hydro,
             dataEX_serie_hydro,
+            dataEX_criteria_recharge_MESO,
+            dataEX_criteria_recharge_secteur,
             # metaEX_criteria_climate,
             # metaEX_criteria_hydro,
             # metaEX_serie_hydro,

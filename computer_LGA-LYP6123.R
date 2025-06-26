@@ -76,8 +76,12 @@ climate_data_file = "deltaRR_deltaTMm_season_GWL.csv"
 pivot_year_TRACC_file = "annees_pivots_TRACC_Explore2.csv" 
 
 ### 2.3 Recharge ___________________________________________________
-recharge_data_dirpath = file.path(archive_data_path, "")
-
+recharge_data_dirpath = file.path(archive_data_path,
+                                  "hydrological-recharge-projection_indicateurs-TRACC")
+recharge_criteria_secteur_dir =
+    "hydrological-recharge-projections_changes-by-warming-level_by-variable-on-secteur-hydro_csv"
+recharge_criteria_MESO_dir =
+    "hydrological-recharge-projections_changes-by-warming-level_by-variable-on-MESO_csv"
 
 ### 2.3. Resources ___________________________________________________
 resources_path = file.path(computer_work_path, 'resources')
@@ -103,6 +107,9 @@ entiteHydro_shp_path = c('entiteHydro/BV_4207_stations.shp',
 river_shp_path = 'coursEau/CoursEau_FXX.shp'
 # piezo
 entitePiezo_shp_path = "entitePiezo_niveau1_extension/entitePiezo_niveau1_extension.shp"
+# meso
+MESO_shp_path = "MESO/MESO.shp"
+
 
 ## 3. OUTPUT DIRECTORIES _____________________________________________
 ### 3.0. Info ________________________________________________________
