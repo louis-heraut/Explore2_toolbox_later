@@ -869,7 +869,8 @@ if ("plot" %in% to_do) {
 
     ###
     # SH = SH[grepl("V", SH)]
-    SH = "K2"
+    SH = c("K2", "M0", "Q0")
+    # SH="K2"
     ###
     
     nSH = length(SH) 
