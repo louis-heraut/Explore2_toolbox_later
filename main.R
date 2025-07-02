@@ -38,7 +38,7 @@ logo_info = list(
 n_projections_by_code = 4
 
 # If the hydrological network needs to be plot
-river_length = 20000
+river_length = 30000
 
 river_selection_mini =
     # NULL
@@ -869,8 +869,8 @@ if ("plot" %in% to_do) {
 
     ###
     # SH = SH[grepl("V", SH)]
-    SH = c("K2", "M0", "Q0")
-    # SH="K2"
+    # SH = c("K2", "M0", "Q0")
+    SH = "M0"
     ###
     
     nSH = length(SH) 
