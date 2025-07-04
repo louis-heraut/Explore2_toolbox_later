@@ -5,8 +5,8 @@ verbose =
 # FALSE
 
 subverbose =
-    TRUE
-# FALSE
+    # TRUE
+FALSE
 
 to_do = c(
     # "compute_delta"
@@ -20,7 +20,7 @@ to_do = c(
 MPI =
     ""
     # "file"
-
+    # "secteur"
 
 path_to_load =
     "/home/lheraut/Documents/INRAE/projects/Explore2_project/Explore2_toolbox_later/results/2025_06_19"
@@ -868,12 +868,40 @@ if ("plot" %in% to_do) {
     SH = unique(substr(Stations$code, 1, 2))
 
     ###
-    # SH = SH[grepl("V", SH)]
+    SH = SH[grepl("K", SH)]
     # SH = c("K2", "M0", "Q0")
-    SH = "M0"
+    # SH = "Q3"
     ###
-    
     nSH = length(SH) 
+
+    if (MPI == "secteur") {
+        start = ceiling(seq(1, nSH,
+                            by=(nSH/size)))
+        if (any(diff(start) == 0)) {
+            start = 1:nSH
+            end = start
+        } else {
+            end = c(start[-1]-1, nSH)
+        }
+        if (rank == 0) {
+            post(paste0(paste0("rank ", 0:(size-1), " get ",
+                               end-start+1, " files"),
+                        collapse="    "))
+        }
+        if (Rrank+1 > nSH) {
+            SH = NULL
+            Rmpi::mpi.send(as.integer(1), type=1,
+                           dest=0, tag=1, comm=0)
+            post(paste0("End signal from rank ", rank))
+        } else {
+            SH = SH[start[Rrank+1]:end[Rrank+1]]
+        }
+    }
+    nSH = length(SH)
+
+    post(paste0("All ", nSH, " secteurs: ",
+                paste0(SH, collapse=" | ")))
+
     
     for (i in 1:nSH) {
         sh = SH[i]
@@ -955,6 +983,14 @@ if ("plot" %in% to_do) {
 
 
 if (MPI != "") {
-    Sys.sleep(10)
+    Sys.sleep(5)
     mpi.finalize()
 }
+
+
+
+
+# text = "R2 - La Charente du confluent de la Bonnieure au confluent des Eaux Claires"
+# title_text = strwrap(text, width=40)
+
+# title_text
