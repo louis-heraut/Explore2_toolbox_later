@@ -2,21 +2,35 @@
 
 
 
-# 1: "Forte diminution généralisée des débits" nommé "S1" ROUGE
-# 6: "Diminution généralisée des débits" nommé "S2" ORANGE
-# 8: "Changements futurs relativement peu marqués" nommé "S3" JAUNE
+meta = ASHE::read_tibble("families.csv", sep=";")
 
-# 3: "Très forte intensification des crues et diminution des débits d'étiage" nommé "C1" BLEU
-# 5: "Intensification des crues et légère diminution des débits d'étiage" nommé "C2" BLEU CLAIR
-
-# 9: "Très forte diminution des débits d'étiage et intensification des crues" nommé "E1" MARRON
-# 4: "Diminution des débits d'étiage et légère intensification des crues" nommé "E2" MARRON CLAIR
-
-# 2: "Augmentation généralisée des débits" nommé "H1" VERT
-
-# 7: "Baisse drastique des débits d'étiage" nommé "A1" VIOLET
+sous_famille = unique(meta[["sous-famille_description"]])
+names(sous_famille) = unique(meta[["sous-famille"]])
 
 
+Narratif_blaise = unique(meta$narratif_couleur)
+names(Narratif_blaise) = unique(meta$narratif_id)
+Narratif_blaise = Narratif_blaise[order(names(Narratif_blaise))]
+
+
+# > sous_famille
+# E : "Intensification des étiages" 
+# X : "Intensification des évènements extrêmes" 
+# M : "Changements modérés" 
+# C : "Intensification des crues" 
+
+Narratif_blaise = c(
+    C1="#603f8b",
+    C2="#a16ae8",
+    E1="#993404",
+    E2="#d95f0e",
+    E3="#fe9929",
+    M1="#1f992d",
+    M2="#94c973",
+    X1="#252525",
+    X2="#575656",
+    X3="#7a7979" 
+)
 
 
 Palette = c(
@@ -32,3 +46,19 @@ Palette = c(
 )
 
 dataSHEEP::test_palette(Palette, colorStep=length(Palette))
+
+Narratif = c(
+    C1="#194765", # "#0e464e", # bleu foncé
+    C2="#2977A8", # bleu clair
+    E1="#D04435", # rouge
+    E2="#D88A1C", # orange
+    E3="#FABF41", # jaune
+    M1="#37765c", #"#1C3C2F", # vert foncé
+    M2="#52AE89", # vert clair
+    X1="#57445d", # violet foncé
+    X2="#977c9f", # violet moyen
+    X3="#C1B2C7" # violet clair
+)
+
+dataSHEEP::test_palette(Narratif, colorStep=length(Narratif),
+                        outname="Narratif")

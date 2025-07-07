@@ -5,34 +5,34 @@ Files = list.files(pattern=".csv")
 
 
 blaise = c(
-    "S1"="#E66912",
-    "H1"="#016367",
-    "C1"="#16085C",
-    "E2"="#D15252",
-    "C2"="#3114C4",
-    "S2"="#D9905D",
-    "A1"="#3D038F",
-    "S3"="#E0AD89",
-    "E1"="#870000"
+    C1="#603f8b",
+    C2="#a16ae8",
+    E1="#993404",
+    E2="#d95f0e",
+    E3="#fe9929",
+    M1="#1f992d",
+    M2="#94c973",
+    X1="#252525",
+    X2="#575656",
+    X3="#7a7979" 
 )
 lou = c(
-    "S1"="#D04435",
-    "S2"="#D88A1C",
-    "S3"="#FABF41",
-    "C1"="#072327",
-    "H1"="#1C3C2F",
-    "C2"="#2977A8",
-    "E1"="#653b2a",
-    "E2"="#b76f52",
-    "A1"="#5F4B66"
+    C1="#0e464e", # bleu foncé
+    C2="#2977A8", # bleu clair
+    E1="#D04435", # rouge
+    E2="#D88A1C", # orange
+    E3="#FABF41", # jaune
+    M1="#1C3C2F", # vert foncé
+    M2="#52AE89", # vert clair
+    X1="#57445d", # violet foncé
+    X2="#715979", # violet moyen
+    X3="#C1B2C7"  # violet clair
 )
 
 blaise = toupper(blaise)
 lou = toupper(lou)
-blaise = blaise[sort(names(blaise))]
-lou = lou[sort(names(lou))]
-
-
+blaise = blaise[order(names(blaise))]
+lou = lou[order(names(lou))]
 
 
 for (file in Files) {

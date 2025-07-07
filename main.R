@@ -809,12 +809,12 @@ if ("plot" %in% to_do) {
                    RWLclean="RWL-40",
                    color="#AE1C27")
         # "GWL-20"=c(GWL=2,
-        # RWL=2.7,
-        # GWLfull="GWL-2.0",
-        # RWLfull="RWL-2.7",
-        # GWLclean="GWL-20",
-        # RWLclean="RWL-27",
-        # color="#F47216")
+                   # RWL=2.7,
+                   # GWLfull="GWL-2.0",
+                   # RWLfull="RWL-2.7",
+                   # GWLclean="GWL-20",
+                   # RWLclean="RWL-27",
+                   # color="#F47216")
     )
 
 
@@ -853,7 +853,6 @@ if ("plot" %in% to_do) {
     #           color_light="#5ef7fd")
     # )
 
-
     NarraTRACC_selection_Paths =
         list.files(file.path(archive_data_path,
                              archive_metadata_dir),
@@ -868,9 +867,9 @@ if ("plot" %in% to_do) {
     SH = unique(substr(Stations$code, 1, 2))
 
     ###
-    SH = SH[grepl("K", SH)]
+    # SH = SH[grepl("(O)|(M)", SH)]
     # SH = c("K2", "M0", "Q0")
-    # SH = "Q3"
+    SH = "M0"
     ###
     nSH = length(SH) 
 
