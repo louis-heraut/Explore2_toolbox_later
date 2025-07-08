@@ -48,16 +48,16 @@ Palette = c(
 dataSHEEP::test_palette(Palette, colorStep=length(Palette))
 
 Narratif = c(
-    C1="#194765", # "#0e464e", # bleu foncé
-    C2="#2977A8", # bleu clair
+    C1="#3A5BA0", # bleu foncé
+    C2="#7e99d0", # bleu clair
     E1="#D04435", # rouge
     E2="#D88A1C", # orange
     E3="#FABF41", # jaune
-    M1="#37765c", #"#1C3C2F", # vert foncé
+    M1="#37765c", # vert foncé
     M2="#52AE89", # vert clair
     X1="#57445d", # violet foncé
     X2="#977c9f", # violet moyen
-    X3="#C1B2C7" # violet clair
+    X3="#C1B2C7"  # violet clair
 )
 
 dataSHEEP::test_palette(Narratif, colorStep=length(Narratif),

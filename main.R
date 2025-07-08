@@ -29,6 +29,10 @@ path_to_load =
 GWL = c("GWL-15", "GWL-20", "GWL-30")
 period_reference_TRACC = c("1991-01-01", "2020-12-31")
 
+NarraTRACC_order = c("X1", "X2", "X3",
+                     "E1", "E2", "E3",
+                     "C1", "C2",
+                     "M1", "M2")
 
 logo_info = list(
     "Explore2"=c(file='LogoExplore2.png'),
@@ -869,7 +873,7 @@ if ("plot" %in% to_do) {
     ###
     # SH = SH[grepl("(O)|(M)", SH)]
     # SH = c("K2", "M0", "Q0")
-    SH = "M0"
+    SH = "M8"
     ###
     nSH = length(SH) 
 
@@ -957,6 +961,7 @@ if ("plot" %in% to_do) {
             # metaEX_serie_hydro,
             WL=WL,
             NarraTRACC_selection=NarraTRACC_selection,
+            NarraTRACC_order=NarraTRACC_order,
             icons=icons,
             logo_info=logo_info,
             Shapefiles=Shapefiles,
