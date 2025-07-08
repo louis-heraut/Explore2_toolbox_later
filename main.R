@@ -6,7 +6,7 @@ verbose =
 
 subverbose =
     # TRUE
-FALSE
+    FALSE
 
 to_do = c(
     # "compute_delta"
@@ -18,9 +18,9 @@ to_do = c(
 
 
 MPI =
-    ""
+    # ""
     # "file"
-    # "secteur"
+    "secteur"
 
 path_to_load =
     "/home/lheraut/Documents/INRAE/projects/Explore2_project/Explore2_toolbox_later/results/2025_06_19"
@@ -657,10 +657,15 @@ variable == "meanQMA_month") {
 
 
 
-
 if ("plot" %in% to_do) {
     library(ggplot2)
     library(latex2exp)
+    
+    library(ggtext)
+    library(gridtext)
+    library(Cairo)
+    options(bitmapType="cairo")
+    # Cairo::Cairo.options(antialias="subpixel")
     
     devtools::load_all("../../dataSHEEP_project/dataSHEEP/")
     dev_path = "../../SHEEPfold_project/SHEEPfold/__SHEEP__"
@@ -811,14 +816,14 @@ if ("plot" %in% to_do) {
                    RWLfull="RWL-4.0",
                    GWLclean="GWL-30",
                    RWLclean="RWL-40",
-                   color="#AE1C27")
-        # "GWL-20"=c(GWL=2,
-                   # RWL=2.7,
-                   # GWLfull="GWL-2.0",
-                   # RWLfull="RWL-2.7",
-                   # GWLclean="GWL-20",
-                   # RWLclean="RWL-27",
-                   # color="#F47216")
+                   color="#AE1C27"),
+        "GWL-20"=c(GWL=2,
+                   RWL=2.7,
+                   GWLfull="GWL-2.0",
+                   RWLfull="RWL-2.7",
+                   GWLclean="GWL-20",
+                   RWLclean="RWL-27",
+                   color="#F47216")
     )
 
 
@@ -873,7 +878,7 @@ if ("plot" %in% to_do) {
     ###
     # SH = SH[grepl("(O)|(M)", SH)]
     # SH = c("K2", "M0", "Q0")
-    SH = "M8"
+    # SH = "P1"
     ###
     nSH = length(SH) 
 
@@ -968,6 +973,7 @@ if ("plot" %in% to_do) {
             Shapefiles_mini=Shapefiles_mini,
             figdir=figdir,
             Pages=NULL,
+            is_MPI=MPI!="",
             verbose=subverbose)
     }
 
