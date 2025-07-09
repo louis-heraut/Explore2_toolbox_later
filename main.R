@@ -18,9 +18,9 @@ to_do = c(
 
 
 MPI =
-    # ""
+    ""
     # "file"
-    "secteur"
+    # "secteur"
 
 path_to_load =
     "/home/lheraut/Documents/INRAE/projects/Explore2_project/Explore2_toolbox_later/results/2025_06_19"
@@ -810,13 +810,13 @@ if ("plot" %in% to_do) {
 
 
     WL = list(
-        "GWL-30"=c(GWL=3,
-                   RWL=4,
-                   GWLfull="GWL-3.0",
-                   RWLfull="RWL-4.0",
-                   GWLclean="GWL-30",
-                   RWLclean="RWL-40",
-                   color="#AE1C27"),
+        # "GWL-30"=c(GWL=3,
+                   # RWL=4,
+                   # GWLfull="GWL-3.0",
+                   # RWLfull="RWL-4.0",
+                   # GWLclean="GWL-30",
+                   # RWLclean="RWL-40",
+                   # color="#AE1C27"),
         "GWL-20"=c(GWL=2,
                    RWL=2.7,
                    GWLfull="GWL-2.0",
@@ -878,7 +878,7 @@ if ("plot" %in% to_do) {
     ###
     # SH = SH[grepl("(O)|(M)", SH)]
     # SH = c("K2", "M0", "Q0")
-    # SH = "P1"
+    SH = "W0"
     ###
     nSH = length(SH) 
 
@@ -917,7 +917,7 @@ if ("plot" %in% to_do) {
                     "% done -> ", sh))
 
         secteur = Secteurs[Secteurs$id_secteur == sh,]
-        Stations_sh = filter(Stations, substr(code, 1, 2) == sh)
+        Stations_sh = filter(Stations, substr(code_hydro2, 1, 2) == sh)
 
         dataEX_criteria_hydro_dirpath =
             file.path(hydro_data_dirpath, hydro_criteria_dir,sh)
@@ -1000,7 +1000,56 @@ if (MPI != "") {
 
 
 
-# text = "R2 - La Charente du confluent de la Bonnieure au confluent des Eaux Claires"
-# title_text = strwrap(text, width=40)
 
-# title_text
+
+
+Stations = ASHE::read_tibble("Selection_points_simulation_20240219.csv")
+Stations$XL93 = as.numeric(gsub(",", ".", Stations$XL93))
+Stations$YL93 = as.numeric(gsub(",", ".", Stations$YL93))
+
+SH = unique(substr(Stations$Code, 1, 2))
+# SH = SH[grepl("H", SH)]
+nSH = length(SH) 
+
+for (sh in SH) {
+    Stations_sh = filter(Stations, substr(Code, 1, 2) == sh)
+    secteurHydro_shp =
+        Shapefiles$secteurHydro[Shapefiles$secteurHydro$CdSecteurH ==
+                                sh,]
+    
+    plot =
+        ggplot() + theme_void() +
+        ggtitle(sh) +
+        geom_sf(data=Shapefiles$secteurHydro) +
+        geom_sf(data=secteurHydro_shp, fill=IPCCgold) +
+        geom_point(data=Stations_sh, aes(x=XL93, y=YL93), size=0.5)
+
+    ggsave(plot=plot,
+           filename=paste0(sh, ".pdf"),
+           path=file.path(figdir, "SH"),
+           height=10, width=10, units="cm",
+           device=cairo_pdf)
+    
+}
+
+secteurHydro_centroid=sf::st_centroid(Shapefiles$secteurHydro)
+
+plot =
+    ggplot() + theme_void() +
+    ggtitle("localisation secteur") +
+    geom_sf(data=Shapefiles$secteurHydro) +
+    geom_sf_text(data=secteurHydro_centroid,
+                 aes(label=CdSecteurH), size=3)
+
+ggsave(plot=plot,
+       filename="_SH_location_.pdf",
+       path=file.path(figdir, "SH"),
+       height=10, width=10, units="cm",
+       device=cairo_pdf)
+
+
+Paths = list.files(file.path(figdir, "SH"),
+                   pattern=".pdf",
+                   full.names=TRUE)
+output_file = file.path(file.path(figdir, "SH"), "_SH_.pdf")
+qpdf::pdf_combine(input=Paths, output=output_file)
