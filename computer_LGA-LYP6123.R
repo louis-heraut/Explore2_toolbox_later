@@ -100,7 +100,7 @@ bassinHydro_shp_path = 'bassinHydro/bassinHydro.shp'
 # Path to the shapefile for sub-basin shape from 'computer_data_path' 
 regionHydro_shp_path = 'regionHydro/regionHydro.shp'
 # Path to the shapefile for sub-basin shape from 'computer_data_path' 
-secteurHydro_shp_path = 'secteurHydro/secteurHydro.shp'
+secteurHydro_shp_path = 'secteurHydro_Explore2/secteurHydro_Explore2.shp'
 # Path to the shapefile for station basins shape from 'computer_data_path' 
 entiteHydro_shp_path = c('entiteHydro/BV_4207_stations.shp',
                          'entiteHydro/3BVs_FRANCE_L2E_2018.shp')

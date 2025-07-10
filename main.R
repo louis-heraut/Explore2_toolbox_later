@@ -9,13 +9,12 @@ subverbose =
     FALSE
 
 to_do = c(
-    # "compute_delta"
-    # "concatenate_delta"
-    # "filter_concatenate_delta"
-    # "reshape_filter_concatenate_delta"
+    # "compute_delta" #MPI
+    # "concatenate_delta" #MPI
+    # "filter_concatenate_delta" 
+    # "reshape_filter_concatenate_delta" #MPI
     "plot"
 )
-
 
 MPI =
     ""
@@ -23,7 +22,7 @@ MPI =
     # "secteur"
 
 path_to_load =
-    "/home/lheraut/Documents/INRAE/projects/Explore2_project/Explore2_toolbox_later/results/2025_06_19"
+    "/home/lheraut/Documents/INRAE/projects/Explore2_project/Explore2_toolbox_later/results/2025_07_10"
 
 
 GWL = c("GWL-15", "GWL-20", "GWL-30")
@@ -141,6 +140,18 @@ if (MPI != "") {
 # }
 
 
+Stations_path = file.path(archive_data_path,
+                          archive_metadata_dir, 
+                          stations_selection_file)
+Stations = ASHE::read_tibble(Stations_path)
+Stations_filtered = filter(Stations, n_rcp85 >=4)
+
+
+# "        post(paste0("* ", i, "/", nVariables, " -> ",
+                    # round(i/nVariables, 1)*100, "%"))"
+
+
+
 if ("compute_delta" %in% to_do) {
 
     variable_to_compute = c(
@@ -165,7 +176,7 @@ if ("compute_delta" %in% to_do) {
     
     Paths = list.files(data_path, pattern=".fst",
                        full.names=TRUE, recursive=TRUE)
-
+    
     Files = basename(Paths)
     is_SAFRAN = grepl("SAFRAN", Files)
     is_RCP85 = grepl("rcp85", Files)
@@ -183,7 +194,6 @@ if ("compute_delta" %in% to_do) {
     nPaths = length(Paths)
     nGWL = length(GWL)
 
-    # stop()
 
     modify_filename = function (x, variable, gwl) {
         info = unlist(strsplit(x, "_"))
@@ -219,10 +229,10 @@ if ("compute_delta" %in% to_do) {
         return (deltaEX_gwl)
     }
 
-
+    post(paste0("nPaths before : ", nPaths))
 
     if (MPI == "file") {
-        start = ceiling(seq(1,  nPaths,
+        start = ceiling(seq(1, nPaths,
                             by=(nPaths/size)))
         if (any(diff(start) == 0)) {
             start = 1:nPaths
@@ -243,13 +253,14 @@ if ("compute_delta" %in% to_do) {
         } else {
             Paths = Paths[start[Rrank+1]:end[Rrank+1]]
         }
+        post(paste0(start[Rrank+1], " -> ", end[Rrank+1]))
     } else {
         Paths = Paths
     } 
     nPaths = length(Paths)
+
+    post(paste0("nPaths after : ", nPaths))
     
-    post(paste0("All ", nPaths, " paths: ",
-                paste0(basename(Paths), collapse=" | ")))
     
     for (i in 1:nPaths) {
         path = Paths[i]
@@ -294,7 +305,6 @@ if ("compute_delta" %in% to_do) {
                               collapse="_")
             variable = gsub("_yr", "", variable)
 
-            # stop()
             
             if (grepl("QMA[_]", variable)) {
                 mean_variable = paste0("mean", variable)
@@ -308,7 +318,8 @@ if ("compute_delta" %in% to_do) {
                                      na.rm=TRUE),
                     .groups="drop")
 
-                dataEX_gwl = format_dataEX_gwl(dataEX_gwl, mean_variable, gwl)
+                dataEX_gwl = format_dataEX_gwl(dataEX_gwl,
+                                               mean_variable, gwl)
                 
                 outfile =
                     modify_filename(basename(path),
@@ -320,18 +331,26 @@ if ("compute_delta" %in% to_do) {
                 ASHE::write_tibble(dataEX_gwl, outpath)
             }
             
-            if (variable == "VCN10") {
+            if (grepl("VCN10", variable)) {
                 returnPeriod = 5
                 waterType = "low"
+                delta_rp_variable = paste0("delta", variable)
+                delta_rp_variable = gsub("VCN10",
+                                         paste0("VCN10-", returnPeriod),
+                                         delta_rp_variable)
             }
-            if (variable == "QJXA") {
+            if (grepl("QJXA", variable)) {
                 returnPeriod = 10
                 waterType = "high"
+                delta_rp_variable = paste0("delta", variable)
+                delta_rp_variable = gsub("QJXA",
+                                         paste0("QJXA-", returnPeriod),
+                                         delta_rp_variable)
             }
 
-            if (variable %in% c("VCN10", "QJXA")) {
-                delta_rp_variable = paste0("delta", variable,
-                                           "-", returnPeriod)
+            if (grepl("VCN10", variable) |
+                grepl("QJXA", variable)) {
+
                 deltaEX_gwl =
                     full_join(
                         summarise(group_by(
@@ -409,9 +428,6 @@ if ("compute_delta" %in% to_do) {
             outpath = file.path(today_resdir, outdir,
                                 outdirpath, outfile)
             ASHE::write_tibble(deltaEX_gwl, outpath)
-
-            
-            # stop()
         }
     }
 }
@@ -497,12 +513,7 @@ if ("filter_concatenate_delta" %in% to_do) {
                        pattern=".fst",
                        recursive=TRUE, full.names=TRUE)
     
-    Stations_path = file.path(archive_data_path,
-                              archive_metadata_dir, 
-                              stations_selection_file)
-    Stations = ASHE::read_tibble(Stations_path)
-    Stations = filter(Stations, n_rcp85 >=4)
-    Code_selection = dplyr::filter(Stations, n_rcp85 >=4)$code
+    Code_selection = Stations_filtered$code
     
     code_Chain_outliers_path = file.path(archive_data_path,
                                          archive_metadata_dir, 
@@ -601,9 +612,7 @@ if ("reshape_filter_concatenate_delta" %in% to_do) {
         }
                 
         if (variable == "deltaQMA_month" |
-
-
-variable == "meanQMA_month") {
+            variable == "meanQMA_month") {
             deltaEX = dplyr::tibble()
             for (path_var in Paths_var) {                
                 deltaEX_tmp = ASHE::read_tibble(path_var)
@@ -630,7 +639,14 @@ variable == "meanQMA_month") {
             outdir = outdir_criteria
         }
         
-        SH = unique(substr(deltaEX$code, 1, 2))
+        deltaEX = dplyr::left_join(deltaEX,
+                                   dplyr::select(Stations,
+                                                 code, SH),
+                                   by="code")
+        deltaEX = dplyr::relocate(deltaEX,
+                                  SH, .before=code)
+        
+        SH = unique(deltaEX$SH)
         nSH = length(SH)
 
         for (j in 1:nSH) {
@@ -639,7 +655,7 @@ variable == "meanQMA_month") {
                             round(j/nSH, 1)*100, "%"))
             }
             sh = SH[j]
-            deltaEX_sh = dplyr::filter(deltaEX, substr(code, 1, 2) == sh)
+            deltaEX_sh = dplyr::filter(deltaEX, SH == sh)
             outfile = paste0(
                 variable,
                 "_GWL-all_historical-rcp85_all_all_ADAMONT_all_filtered_",
@@ -703,12 +719,6 @@ if ("plot" %in% to_do) {
                              recursive=TRUE, full.names=TRUE)
     icons = lapply(icons_paths, svgparser::read_svg)
     names(icons) = gsub(".svg", "", basename(icons_paths))
-
-    Stations_path = file.path(archive_data_path,
-                              archive_metadata_dir, 
-                              stations_selection_file)
-    Stations = ASHE::read_tibble(Stations_path)
-    Stations = filter(Stations, n_rcp85 >=4)
 
 
     Secteurs_path = file.path(archive_data_path,
@@ -810,20 +820,20 @@ if ("plot" %in% to_do) {
 
 
     WL = list(
-        # "GWL-30"=c(GWL=3,
-                   # RWL=4,
-                   # GWLfull="GWL-3.0",
-                   # RWLfull="RWL-4.0",
-                   # GWLclean="GWL-30",
-                   # RWLclean="RWL-40",
-                   # color="#AE1C27"),
-        "GWL-20"=c(GWL=2,
-                   RWL=2.7,
-                   GWLfull="GWL-2.0",
-                   RWLfull="RWL-2.7",
-                   GWLclean="GWL-20",
-                   RWLclean="RWL-27",
-                   color="#F47216")
+        "GWL-30"=c(GWL=3,
+                   RWL=4,
+                   GWLfull="GWL-3.0",
+                   RWLfull="RWL-4.0",
+                   GWLclean="GWL-30",
+                   RWLclean="RWL-40",
+                   color="#AE1C27")
+        # "GWL-20"=c(GWL=2,
+                   # RWL=2.7,
+                   # GWLfull="GWL-2.0",
+                   # RWLfull="RWL-2.7",
+                   # GWLclean="GWL-20",
+                   # RWLclean="RWL-27",
+                   # color="#F47216")
     )
 
 
@@ -873,12 +883,12 @@ if ("plot" %in% to_do) {
         gsub("[_].*", "", basename(NarraTRACC_selection_Paths))
     
 
-    SH = unique(substr(Stations$code, 1, 2))
+    SH = unique(Stations_filtered$SH)
 
     ###
     # SH = SH[grepl("(O)|(M)", SH)]
     # SH = c("K2", "M0", "Q0")
-    SH = "W0"
+    SH = "K2"
     ###
     nSH = length(SH) 
 
@@ -917,7 +927,8 @@ if ("plot" %in% to_do) {
                     "% done -> ", sh))
 
         secteur = Secteurs[Secteurs$id_secteur == sh,]
-        Stations_sh = filter(Stations, substr(code_hydro2, 1, 2) == sh)
+        Stations_filtered_sh =
+            dplyr::filter(Stations_filtered, SH == sh)
 
         dataEX_criteria_hydro_dirpath =
             file.path(hydro_data_dirpath, hydro_criteria_dir,sh)
@@ -929,13 +940,17 @@ if ("plot" %in% to_do) {
 
         dataEX_criteria_hydro =
             purrr::reduce(dataEX_criteria_hydro_list, full_join,
-                          by=c("code", "GWL", "EXP",
+                          by=c("code", "SH", "GWL", "EXP",
                                "GCM", "RCM", "BC", "HM"))
-        dataEX_criteria_hydro$SH = substr(dataEX_criteria_hydro$code,
-                                          1, 2)
-        dataEX_criteria_hydro = dplyr::relocate(dataEX_criteria_hydro,
-                                                SH, .before=code)
 
+        # dataEX_criteria_hydro =
+            # dplyr::left_join(dataEX_criteria_hydro,
+                             # dplyr::select(Stations_filtered,
+                                           # code, SH),
+                             # by="code")
+        # dataEX_criteria_hydro = dplyr::relocate(dataEX_criteria_hydro,
+                                                # SH, .before=code)
+        
         dataEX_serie_hydro_dirpath = file.path(hydro_data_dirpath,
                                                hydro_serie_dir, sh)
         dataEX_serie_hydro_paths = list.files(dataEX_serie_hydro_dirpath,
@@ -945,16 +960,20 @@ if ("plot" %in% to_do) {
         names(dataEX_serie_hydro) =
             gsub("[_].*", "", basename(dataEX_serie_hydro_paths))
 
-        for (j in 1:length(dataEX_serie_hydro)) {
-            dataEX_serie_hydro[[j]]$SH =
-                substr(dataEX_serie_hydro[[j]]$code, 1, 2)
-            dataEX_serie_hydro[[j]] =
-                dplyr::relocate(dataEX_serie_hydro[[j]],
-                                SH, .before=code)
-        }
-        
+        # for (j in 1:length(dataEX_serie_hydro)) {
+            # dataEX_serie_hydro[[j]] =
+                # dplyr::left_join(dataEX_serie_hydro[[j]],
+                                 # dplyr::select(Stations_filtered,
+                                               # code, SH),
+                                 # by="code")
+            # dataEX_serie_hydro[[j]] =
+                # dplyr::relocate(dataEX_serie_hydro[[j]],
+                                # SH, .before=code)
+        # }
+
+
         sheet_projection_secteur(
-            Stations_sh,
+            Stations_filtered_sh,
             secteur,
             dataEX_criteria_climate_secteur,
             dataEX_criteria_hydro,
@@ -1001,55 +1020,52 @@ if (MPI != "") {
 
 
 
+# SH = unique(Stations_filtered$SH)
+# nSH = length(SH) 
 
-
-Stations = ASHE::read_tibble("Selection_points_simulation_20240219.csv")
-Stations$XL93 = as.numeric(gsub(",", ".", Stations$XL93))
-Stations$YL93 = as.numeric(gsub(",", ".", Stations$YL93))
-
-SH = unique(substr(Stations$Code, 1, 2))
-# SH = SH[grepl("H", SH)]
-nSH = length(SH) 
-
-for (sh in SH) {
-    Stations_sh = filter(Stations, substr(Code, 1, 2) == sh)
-    secteurHydro_shp =
-        Shapefiles$secteurHydro[Shapefiles$secteurHydro$CdSecteurH ==
-                                sh,]
+# for (sh in SH) {
+#     print(sh)
     
-    plot =
-        ggplot() + theme_void() +
-        ggtitle(sh) +
-        geom_sf(data=Shapefiles$secteurHydro) +
-        geom_sf(data=secteurHydro_shp, fill=IPCCgold) +
-        geom_point(data=Stations_sh, aes(x=XL93, y=YL93), size=0.5)
-
-    ggsave(plot=plot,
-           filename=paste0(sh, ".pdf"),
-           path=file.path(figdir, "SH"),
-           height=10, width=10, units="cm",
-           device=cairo_pdf)
+#     Stations_filtered_sh = filter(Stations_filtered, SH == sh)
+#     secteurHydro_shp =
+#         Shapefiles$secteurHydro[Shapefiles$secteurHydro$CdSecteurH ==
+#                                 sh,]
     
-}
+#     plot =
+#         ggplot() + theme_void() +
+#         ggtitle(sh) +
+#         geom_sf(data=Shapefiles$secteurHydro) +
+#         geom_sf(data=secteurHydro_shp, fill=IPCCgold) +
+#         geom_point(data=Stations_filtered_sh,
+# aes(x=XL93_m, y=YL93_m), size=0.5)
 
-secteurHydro_centroid=sf::st_centroid(Shapefiles$secteurHydro)
+#     ggsave(plot=plot,
+#            filename=paste0(sh, ".pdf"),
+#            path=file.path(figdir, "SH"),
+#            height=10, width=10, units="cm",
+#            device=cairo_pdf)
+    
+# }
 
-plot =
-    ggplot() + theme_void() +
-    ggtitle("localisation secteur") +
-    geom_sf(data=Shapefiles$secteurHydro) +
-    geom_sf_text(data=secteurHydro_centroid,
-                 aes(label=CdSecteurH), size=3)
-
-ggsave(plot=plot,
-       filename="_SH_location_.pdf",
-       path=file.path(figdir, "SH"),
-       height=10, width=10, units="cm",
-       device=cairo_pdf)
+# secteurHydro_centroid=sf::st_centroid(Shapefiles$secteurHydro)
 
 
-Paths = list.files(file.path(figdir, "SH"),
-                   pattern=".pdf",
-                   full.names=TRUE)
-output_file = file.path(file.path(figdir, "SH"), "_SH_.pdf")
-qpdf::pdf_combine(input=Paths, output=output_file)
+# plot =
+#     ggplot() + theme_void() +
+#     ggtitle("localisation secteur") +
+#     geom_sf(data=Shapefiles$secteurHydro) +
+#     geom_sf_text(data=secteurHydro_centroid,
+#                  aes(label=CdSecteurH), size=3)
+
+# ggsave(plot=plot,
+#        filename="_SH_location_.pdf",
+#        path=file.path(figdir, "SH"),
+#        height=10, width=10, units="cm",
+#        device=cairo_pdf)
+
+
+# Paths = list.files(file.path(figdir, "SH"),
+#                    pattern=".pdf",
+#                    full.names=TRUE)
+# output_file = file.path(file.path(figdir, "SH"), "_SH_.pdf")
+# qpdf::pdf_combine(input=Paths, output=output_file)
