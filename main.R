@@ -14,18 +14,24 @@ to_do = c(
     # "filter_concatenate_delta" 
     # "reshape_filter_concatenate_delta" #MPI
     "plot"
+    # "plot_summary"
 )
 
 MPI =
-    ""
+    # ""
     # "file"
-    # "secteur"
+    "secteur"
 
 path_to_load =
     "/home/lheraut/Documents/INRAE/projects/Explore2_project/Explore2_toolbox_later/results/2025_07_10"
 
 
-GWL = c("GWL-15", "GWL-20", "GWL-30")
+GWL = c(
+    # "GWL-15",
+    "GWL-20",
+    "GWL-30"
+)
+
 period_reference_TRACC = c("1991-01-01", "2020-12-31")
 
 NarraTRACC_order = c("X1", "X2", "X3",
@@ -35,7 +41,8 @@ NarraTRACC_order = c("X1", "X2", "X3",
 
 logo_info = list(
     "Explore2"=c(file='LogoExplore2.png'),
-    "TRACC"=c(file='la_france_s_adapte.png')
+    "TRACC"=c(file='la_france_s_adapte.png'),
+    "MET"=c(file='MET.png')
 )
 
 n_projections_by_code = 4
@@ -673,7 +680,8 @@ if ("reshape_filter_concatenate_delta" %in% to_do) {
 
 
 
-if ("plot" %in% to_do) {
+if ("plot" %in% to_do |
+    "plot_summary" %in% to_do) {
     library(ggplot2)
     library(latex2exp)
     
@@ -727,6 +735,10 @@ if ("plot" %in% to_do) {
     Secteurs = ASHE::read_tibble(Secteurs_path)
     Secteurs$id = 1:nrow(Secteurs)
 
+}
+
+
+if ("plot" %in% to_do) {
     Projections_path = file.path(archive_data_path,
                                  archive_metadata_dir,
                                  projections_selection_file)
@@ -826,15 +838,17 @@ if ("plot" %in% to_do) {
                    RWLfull="RWL-4.0",
                    GWLclean="GWL-30",
                    RWLclean="RWL-40",
-                   color="#AE1C27")
-        # "GWL-20"=c(GWL=2,
-                   # RWL=2.7,
-                   # GWLfull="GWL-2.0",
-                   # RWLfull="RWL-2.7",
-                   # GWLclean="GWL-20",
-                   # RWLclean="RWL-27",
-                   # color="#F47216")
+                   color="#AE1C27"),
+        "GWL-20"=c(GWL=2,
+                   RWL=2.7,
+                   GWLfull="GWL-2.0",
+                   RWLfull="RWL-2.7",
+                   GWLclean="GWL-20",
+                   RWLclean="RWL-27",
+                   color="#F47216")
     )
+
+    WL = WL[GWL]
 
 
     ####### /!\ climateChain pas le meme ordre que Chain
@@ -884,11 +898,12 @@ if ("plot" %in% to_do) {
     
 
     SH = unique(Stations_filtered$SH)
+    SH = SH[!is.na(SH)]
 
     ###
     # SH = SH[grepl("(O)|(M)", SH)]
-    # SH = c("K2", "M0", "Q0")
-    SH = "K2"
+    # SH = c("N0", "Q8", "Q0")
+    # SH = c("N0", "K2")
     ###
     nSH = length(SH) 
 
@@ -926,7 +941,7 @@ if ("plot" %in% to_do) {
         post(paste0(i, "/", nSH, " so ", round(i/nSH*100, 1),
                     "% done -> ", sh))
 
-        secteur = Secteurs[Secteurs$id_secteur == sh,]
+        secteur = Secteurs[Secteurs$secteur_id == sh,]
         Stations_filtered_sh =
             dplyr::filter(Stations_filtered, SH == sh)
 
@@ -990,7 +1005,7 @@ if ("plot" %in% to_do) {
             logo_info=logo_info,
             Shapefiles=Shapefiles,
             Shapefiles_mini=Shapefiles_mini,
-            figdir=figdir,
+            figdir=file.path(figdir, "datasheet"),
             Pages=NULL,
             is_MPI=MPI!="",
             verbose=subverbose)
@@ -1007,6 +1022,28 @@ if ("plot" %in% to_do) {
     # capitalize_first <- function(s) {
     # paste0(toupper(substr(s, 1, 1)), substr(s, 2, nchar(s)))
     # }
+}
+
+
+##################
+# /!\ CODE SANS SH
+##################
+
+
+if ("plot_summary" %in% to_do) {
+    Regions_path = file.path(archive_data_path,
+                         archive_metadata_dir, 
+                         regions_selection_file)
+    Regions = ASHE::read_tibble(Regions_path)
+
+    sheet_projection_secteur_summary(
+        Regions=Regions,
+        Secteurs=Secteurs,
+        Stations=Stations,
+        logo_info=logo_info,
+        figdir=file.path(figdir, "summary"),
+        verbose=subverbose
+    )
 }
 
 
@@ -1069,3 +1106,5 @@ if (MPI != "") {
 #                    full.names=TRUE)
 # output_file = file.path(file.path(figdir, "SH"), "_SH_.pdf")
 # qpdf::pdf_combine(input=Paths, output=output_file)
+
+

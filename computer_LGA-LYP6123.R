@@ -66,6 +66,7 @@ hydro_serie_dir =
     "hydrological-projections_series-by-warming-level_by-code_filtered-fst"
 projections_selection_file = "chaines_simulations_Explore2.csv"
 stations_selection_file = "stations_Explore2.csv"
+regions_selection_file = "regions_Explore2.csv"
 variables_hydro_selection_file =
     "indicateurs_hydrologiques_agregees_Explore2.csv"
 code_Chain_outliers_file = "code_Chain_outliers_Explore2.csv"
